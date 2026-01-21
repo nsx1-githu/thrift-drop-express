@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, CreditCard, Smartphone } from 'lucide-react';
+import { ChevronLeft, Copy, Check, QrCode } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const upiApps = [
-  { id: 'gpay', name: 'Google Pay', icon: '🟢' },
-  { id: 'phonepe', name: 'PhonePe', icon: '🟣' },
-  { id: 'paytm', name: 'Paytm', icon: '🔵' },
-  { id: 'bhim', name: 'BHIM UPI', icon: '🟠' },
-];
+// Seller UPI details - update these with your actual details
+const SELLER_UPI_ID = 'seller@upi';
+const SELLER_NAME = 'Thrift Store';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, getTotal, clearCart } = useCartStore();
-  const [selectedUpi, setSelectedUpi] = useState('gpay');
+  const [upiRefNumber, setUpiRefNumber] = useState('');
+  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -33,6 +32,13 @@ const Checkout = () => {
     return null;
   }
 
+  const copyUpiId = async () => {
+    await navigator.clipboard.writeText(SELLER_UPI_ID);
+    setCopied(true);
+    toast.success('UPI ID copied!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
@@ -50,6 +56,12 @@ const Checkout = () => {
       newErrors.address = 'Address is required';
     } else if (formData.address.trim().length < 20) {
       newErrors.address = 'Please enter a complete address';
+    }
+
+    if (!upiRefNumber.trim()) {
+      newErrors.upiRef = 'UPI reference number is required';
+    } else if (upiRefNumber.trim().length < 8) {
+      newErrors.upiRef = 'Enter a valid UPI transaction reference';
     }
     
     setErrors(newErrors);
@@ -72,24 +84,58 @@ const Checkout = () => {
 
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Generate order ID
+      const orderId = `THR${Date.now().toString(36).toUpperCase()}`;
+      
+      // Prepare order items for database
+      const orderItems = items.map(item => ({
+        product_id: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        image: item.product.images[0],
+      }));
 
-    // Generate order ID
-    const orderId = `THR${Date.now().toString(36).toUpperCase()}`;
-    
-    // Store order details for confirmation page
-    sessionStorage.setItem('lastOrder', JSON.stringify({
-      orderId,
-      items,
-      total: finalTotal,
-      customerName: formData.name,
-      paymentMethod: upiApps.find(app => app.id === selectedUpi)?.name,
-    }));
+      // Save order to database
+      const { error } = await supabase.from('orders').insert({
+        order_id: orderId,
+        customer_name: formData.name.trim(),
+        customer_phone: formData.phone.trim(),
+        customer_address: formData.address.trim(),
+        items: orderItems,
+        subtotal: total,
+        shipping: shippingCost,
+        total: finalTotal,
+        payment_method: 'UPI',
+        payment_status: 'pending', // Pending verification
+        razorpay_payment_id: upiRefNumber.trim(), // Using this field for UPI reference
+      });
 
-    clearCart();
-    navigate('/order-confirmation');
+      if (error) throw error;
+
+      // Store order details for confirmation page
+      sessionStorage.setItem('lastOrder', JSON.stringify({
+        orderId,
+        items,
+        total: finalTotal,
+        customerName: formData.name,
+        paymentMethod: 'UPI (Pending Verification)',
+      }));
+
+      clearCart();
+      navigate('/order-confirmation');
+    } catch (error) {
+      console.error('Order error:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  // Generate UPI payment link for QR code
+  const upiPaymentLink = `upi://pay?pa=${SELLER_UPI_ID}&pn=${encodeURIComponent(SELLER_NAME)}&am=${finalTotal}&cu=INR`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentLink)}`;
 
   return (
     <div className="min-h-screen pb-32">
@@ -181,27 +227,76 @@ const Checkout = () => {
           </div>
         </section>
 
-        {/* Payment Method */}
+        {/* UPI Payment Section */}
         <section>
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Smartphone className="w-4 h-4" />
+            <QrCode className="w-4 h-4" />
             Pay via UPI
           </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {upiApps.map((app) => (
-              <button
-                key={app.id}
-                onClick={() => setSelectedUpi(app.id)}
-                className={`upi-button ${selectedUpi === app.id ? 'selected' : ''}`}
+          
+          <div className="p-4 bg-card rounded-sm border border-border space-y-4">
+            {/* Amount to pay */}
+            <div className="text-center pb-3 border-b border-border">
+              <p className="text-sm text-muted-foreground">Amount to Pay</p>
+              <p className="text-2xl font-bold text-primary">₹{finalTotal.toLocaleString()}</p>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex justify-center">
+              <img 
+                src={qrCodeUrl} 
+                alt="UPI QR Code" 
+                className="w-48 h-48 rounded-lg bg-white p-2"
+              />
+            </div>
+
+            {/* UPI ID */}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div>
+                <p className="text-xs text-muted-foreground">UPI ID</p>
+                <p className="font-mono text-sm">{SELLER_UPI_ID}</p>
+              </div>
+              <button 
+                onClick={copyUpiId}
+                className="p-2 hover:bg-muted rounded-md transition-colors"
               >
-                <span className="text-lg">{app.icon}</span>
-                <span className="text-sm">{app.name}</span>
+                {copied ? (
+                  <Check className="w-4 h-4 text-success" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
               </button>
-            ))}
+            </div>
+
+            {/* Instructions */}
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>1. Scan the QR code or copy UPI ID</p>
+              <p>2. Pay ₹{finalTotal.toLocaleString()} using any UPI app</p>
+              <p>3. Enter the transaction reference number below</p>
+            </div>
+
+            {/* Transaction Reference Input */}
+            <div>
+              <input
+                type="text"
+                value={upiRefNumber}
+                onChange={(e) => {
+                  setUpiRefNumber(e.target.value);
+                  if (errors.upiRef) {
+                    setErrors(prev => ({ ...prev, upiRef: '' }));
+                  }
+                }}
+                placeholder="Enter UPI Transaction Reference Number"
+                className={`input-field ${errors.upiRef ? 'border-destructive' : ''}`}
+              />
+              {errors.upiRef && (
+                <p className="text-xs text-destructive mt-1">{errors.upiRef}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                You can find this in your UPI app's transaction history
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            You'll be redirected to complete payment after placing the order.
-          </p>
         </section>
       </div>
 
@@ -215,15 +310,15 @@ const Checkout = () => {
           {isProcessing ? (
             <>
               <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-              Processing...
+              Placing Order...
             </>
           ) : (
-            <>
-              <CreditCard className="w-4 h-4" />
-              Pay ₹{finalTotal.toLocaleString()}
-            </>
+            'Confirm Order'
           )}
         </button>
+        <p className="text-xs text-center text-muted-foreground mt-2">
+          Order will be verified within 24 hours
+        </p>
       </div>
     </div>
   );
