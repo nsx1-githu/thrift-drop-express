@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { signIn, isAdmin, user } = useAuth();
+  const { signIn, signUp, isAdmin, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   // Redirect if already logged in as admin
   if (user && isAdmin) {
@@ -27,18 +28,30 @@ const AdminLogin = () => {
       return;
     }
 
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        toast.error(error.message || 'Login failed');
-        return;
+      if (isSignUp) {
+        const { error } = await signUp(email, password);
+        if (error) {
+          toast.error(error.message || 'Sign up failed');
+          return;
+        }
+        toast.success('Account created! Please contact admin to get admin access.');
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast.error(error.message || 'Login failed');
+          return;
+        }
+        toast.success('Logged in successfully');
+        navigate('/admin');
       }
-
-      toast.success('Logged in successfully');
-      navigate('/admin');
     } catch (error) {
       toast.error('An error occurred');
     } finally {
@@ -54,7 +67,7 @@ const AdminLogin = () => {
           <button onClick={() => navigate('/')} className="p-1">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="font-semibold">Admin Login</h1>
+          <h1 className="font-semibold">{isSignUp ? 'Admin Sign Up' : 'Admin Login'}</h1>
         </div>
       </div>
 
@@ -67,9 +80,13 @@ const AdminLogin = () => {
             </div>
           </div>
 
-          <h2 className="text-xl font-semibold text-center mb-2">Welcome Back</h2>
+          <h2 className="text-xl font-semibold text-center mb-2">
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
+          </h2>
           <p className="text-sm text-muted-foreground text-center mb-6">
-            Sign in to access the admin dashboard
+            {isSignUp 
+              ? 'Sign up to request admin access' 
+              : 'Sign in to access the admin dashboard'}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,7 +110,7 @@ const AdminLogin = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 className="input-field pl-10 pr-10"
-                autoComplete="current-password"
+                autoComplete={isSignUp ? 'new-password' : 'current-password'}
               />
               <button
                 type="button"
@@ -109,9 +126,23 @@ const AdminLogin = () => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading 
+                ? (isSignUp ? 'Creating account...' : 'Signing in...') 
+                : (isSignUp ? 'Create Account' : 'Sign In')}
             </Button>
           </form>
+
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-primary hover:underline"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Sign up"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
