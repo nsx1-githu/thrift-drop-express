@@ -1,11 +1,12 @@
-import { ShoppingBag, Search, Menu } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { ShoppingBag, Search, Menu, Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { useState } from 'react';
 
 export const Header = () => {
-  const location = useLocation();
   const itemCount = useCartStore((state) => state.getItemCount());
+  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -16,13 +17,26 @@ export const Header = () => {
           <span className="text-xs font-mono text-muted-foreground">DROPS</span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link 
             to="/search" 
             className="p-2 rounded-sm hover:bg-secondary transition-colors"
             aria-label="Search"
           >
             <Search className="w-5 h-5 text-muted-foreground" />
+          </Link>
+
+          <Link 
+            to="/notifications" 
+            className="relative p-2 rounded-sm hover:bg-secondary transition-colors"
+            aria-label="Notifications"
+          >
+            <Bell className="w-5 h-5 text-muted-foreground" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center text-[10px] font-bold bg-destructive text-destructive-foreground rounded-full">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Link>
 
           <Link 
@@ -65,6 +79,13 @@ export const Header = () => {
               onClick={() => setMenuOpen(false)}
             >
               All Products
+            </Link>
+            <Link 
+              to="/track-order" 
+              className="block py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+              onClick={() => setMenuOpen(false)}
+            >
+              Track Order
             </Link>
             <Link 
               to="/cart" 
