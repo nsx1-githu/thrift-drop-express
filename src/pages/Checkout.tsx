@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Copy, Check, QrCode } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useNotificationStore } from '@/store/notificationStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -12,6 +13,7 @@ const SELLER_NAME = 'Thrift Store';
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, getTotal, clearCart } = useCartStore();
+  const { addNotification } = useNotificationStore();
   const [upiRefNumber, setUpiRefNumber] = useState('');
   const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
@@ -113,6 +115,14 @@ const Checkout = () => {
       });
 
       if (error) throw error;
+
+      // Add notification
+      addNotification({
+        title: 'Order Placed Successfully!',
+        message: `Your order ${orderId} has been placed. Payment verification is pending.`,
+        type: 'order',
+        orderId,
+      });
 
       // Store order details for confirmation page
       sessionStorage.setItem('lastOrder', JSON.stringify({

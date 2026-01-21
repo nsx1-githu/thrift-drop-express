@@ -42,6 +42,14 @@
     --warning: 40 90% 55%;
     --warning-foreground: 30 5% 8%;
 
+    /* Status colors for orders */
+    --status-pending: 45 93% 47%;
+    --status-pending-foreground: 30 5% 8%;
+    --status-verified: 142 71% 45%;
+    --status-verified-foreground: 40 20% 95%;
+    --status-failed: 0 84% 60%;
+    --status-failed-foreground: 40 20% 95%;
+
     --sidebar-background: 30 5% 10%;
     --sidebar-foreground: 40 20% 85%;
     --sidebar-primary: 35 30% 75%;

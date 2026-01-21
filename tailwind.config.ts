@@ -59,6 +59,18 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        "status-pending": {
+          DEFAULT: "hsl(var(--status-pending))",
+          foreground: "hsl(var(--status-pending-foreground))",
+        },
+        "status-verified": {
+          DEFAULT: "hsl(var(--status-verified))",
+          foreground: "hsl(var(--status-verified-foreground))",
+        },
+        "status-failed": {
+          DEFAULT: "hsl(var(--status-failed))",
+          foreground: "hsl(var(--status-failed-foreground))",
+        },
         cream: "hsl(var(--cream))",
         tan: "hsl(var(--tan))",
         rust: "hsl(var(--rust))",
