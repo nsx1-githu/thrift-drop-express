@@ -1,18 +1,42 @@
 import { ShoppingBag, Search, Menu, Bell } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+
+const REQUIRED_TAPS = 5;
+const TAP_TIME_WINDOW = 2000; // 2 seconds
 
 export const Header = () => {
+  const navigate = useNavigate();
   const itemCount = useCartStore((state) => state.getItemCount());
   const unreadCount = useNotificationStore((state) => state.getUnreadCount());
   const [menuOpen, setMenuOpen] = useState(false);
+  const tapTimestamps = useRef<number[]>([]);
+
+  const handleLogoTap = (e: React.MouseEvent) => {
+    const now = Date.now();
+    
+    // Filter out old taps outside the time window
+    tapTimestamps.current = tapTimestamps.current.filter(
+      (timestamp) => now - timestamp < TAP_TIME_WINDOW
+    );
+    
+    // Add current tap
+    tapTimestamps.current.push(now);
+
+    // Check if we have enough taps
+    if (tapTimestamps.current.length >= REQUIRED_TAPS) {
+      e.preventDefault();
+      tapTimestamps.current = []; // Reset
+      navigate('/admin/login');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container flex items-center justify-between h-14 px-4">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2" onClick={handleLogoTap}>
           <span className="text-xl font-bold tracking-tight text-cream">THRIFT</span>
           <span className="text-xs font-mono text-muted-foreground">DROPS</span>
         </Link>
