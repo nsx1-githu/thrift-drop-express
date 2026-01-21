@@ -1,19 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { ProductForm } from '@/components/admin/ProductForm';
+import { SettingsPanel } from '@/components/admin/SettingsPanel';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -171,6 +165,10 @@ const AdminDashboard = () => {
               <Package className="w-4 h-4 mr-2" />
               Products
             </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">
@@ -256,6 +254,10 @@ const AdminDashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <SettingsPanel />
           </TabsContent>
         </Tabs>
       </div>
