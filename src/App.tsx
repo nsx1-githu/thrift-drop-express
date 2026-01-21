@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
+import { useSecretAdmin } from "./hooks/useSecretAdmin";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -21,6 +22,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Component that uses the secret admin hook (needs to be inside BrowserRouter)
+const SecretAdminListener = () => {
+  useSecretAdmin();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -28,6 +35,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <SecretAdminListener />
           <div className="min-h-screen bg-background">
             <Header />
             <main>
