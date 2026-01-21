@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Copy, Check, QrCode } from 'lucide-react';
+import { ChevronLeft, Copy, Check, QrCode, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Seller UPI details - update these with your actual details
-const SELLER_UPI_ID = 'seller@upi';
-const SELLER_NAME = 'Thrift Store';
+interface StoreSettings {
+  store_name: string;
+  upi_id: string;
+  upi_qr_image: string;
+}
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -23,11 +25,49 @@ const Checkout = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [settings, setSettings] = useState<StoreSettings>({
+    store_name: 'Thrift Store',
+    upi_id: 'seller@upi',
+    upi_qr_image: '',
+  });
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   const total = getTotal();
   const shippingFree = total >= 999;
   const shippingCost = shippingFree ? 0 : 79;
   const finalTotal = total + shippingCost;
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('store_settings')
+          .select('key, value');
+
+        if (error) throw error;
+
+        const settingsMap: StoreSettings = {
+          store_name: 'Thrift Store',
+          upi_id: 'seller@upi',
+          upi_qr_image: '',
+        };
+
+        data?.forEach((item) => {
+          if (item.key in settingsMap) {
+            settingsMap[item.key as keyof StoreSettings] = item.value;
+          }
+        });
+
+        setSettings(settingsMap);
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   if (items.length === 0) {
     navigate('/cart');
@@ -35,7 +75,7 @@ const Checkout = () => {
   }
 
   const copyUpiId = async () => {
-    await navigator.clipboard.writeText(SELLER_UPI_ID);
+    await navigator.clipboard.writeText(settings.upi_id);
     setCopied(true);
     toast.success('UPI ID copied!');
     setTimeout(() => setCopied(false), 2000);
@@ -143,9 +183,12 @@ const Checkout = () => {
     }
   };
 
-  // Generate UPI payment link for QR code
-  const upiPaymentLink = `upi://pay?pa=${SELLER_UPI_ID}&pn=${encodeURIComponent(SELLER_NAME)}&am=${finalTotal}&cu=INR`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentLink)}`;
+  // Generate UPI payment link for QR code (fallback if no custom QR uploaded)
+  const upiPaymentLink = `upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.store_name)}&am=${finalTotal}&cu=INR`;
+  const generatedQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentLink)}`;
+  
+  // Use custom QR if available, otherwise use generated one
+  const qrCodeUrl = settings.upi_qr_image || generatedQrCodeUrl;
 
   return (
     <div className="min-h-screen pb-32">
@@ -253,18 +296,24 @@ const Checkout = () => {
 
             {/* QR Code */}
             <div className="flex justify-center">
-              <img 
-                src={qrCodeUrl} 
-                alt="UPI QR Code" 
-                className="w-48 h-48 rounded-lg bg-white p-2"
-              />
+              {isLoadingSettings ? (
+                <div className="w-48 h-48 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <img 
+                  src={qrCodeUrl} 
+                  alt="UPI QR Code" 
+                  className="w-48 h-48 rounded-lg bg-white p-2 object-contain"
+                />
+              )}
             </div>
 
             {/* UPI ID */}
             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
               <div>
                 <p className="text-xs text-muted-foreground">UPI ID</p>
-                <p className="font-mono text-sm">{SELLER_UPI_ID}</p>
+                <p className="font-mono text-sm">{settings.upi_id}</p>
               </div>
               <button 
                 onClick={copyUpiId}
