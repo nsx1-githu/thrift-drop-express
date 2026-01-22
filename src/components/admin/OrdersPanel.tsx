@@ -288,7 +288,7 @@ export const OrdersPanel = () => {
                         className="flex-1 bg-status-verified hover:bg-status-verified/90 text-status-verified-foreground"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
-                        Verify Payment
+                         Accept Order
                       </Button>
                       <Button 
                         onClick={() => updateOrderStatus(order.id, 'failed')}
@@ -296,7 +296,7 @@ export const OrdersPanel = () => {
                         className="flex-1"
                       >
                         <XCircle className="w-4 h-4 mr-1" />
-                        Reject
+                         Reject Order
                       </Button>
                     </div>
                   )}
