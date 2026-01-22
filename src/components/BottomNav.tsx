@@ -1,15 +1,18 @@
-import { Home, Search, ShoppingBag, Grid, Package } from 'lucide-react';
+import { Home, Search, ShoppingBag, Grid, Package, Download } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
+import { usePwaInstallAvailable } from '@/hooks/usePwaInstallAvailable';
 
 export const BottomNav = () => {
   const location = useLocation();
   const itemCount = useCartStore((state) => state.getItemCount());
+  const canInstall = usePwaInstallAvailable();
 
   const navItems = [
     { to: '/', icon: Home, label: 'Home' },
     { to: '/products', icon: Grid, label: 'Shop' },
     { to: '/track-order', icon: Package, label: 'Track' },
+    ...(canInstall ? [{ to: '/install', icon: Download, label: 'Install' }] : []),
     { to: '/cart', icon: ShoppingBag, label: 'Cart', badge: itemCount },
   ];
 
