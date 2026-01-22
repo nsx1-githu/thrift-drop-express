@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useState, useRef } from 'react';
+import { useStoreSettings } from '@/hooks/useStoreSettings';
 
 const REQUIRED_TAPS = 5;
 const TAP_TIME_WINDOW = 2000; // 2 seconds
@@ -13,6 +14,10 @@ export const Header = () => {
   const unreadCount = useNotificationStore((state) => state.getUnreadCount());
   const [menuOpen, setMenuOpen] = useState(false);
   const tapTimestamps = useRef<number[]>([]);
+  const { get } = useStoreSettings();
+
+  const storeName = get('store_name', 'THRIFT DROPS');
+  const logoUrl = get('theme_logo_url', '');
 
   const handleLogoTap = (e: React.MouseEvent) => {
     const now = Date.now();
@@ -37,8 +42,19 @@ export const Header = () => {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container flex items-center justify-between h-14 px-4">
         <Link to="/" className="flex items-center gap-2" onClick={handleLogoTap}>
-          <span className="text-xl font-bold tracking-tight text-cream">THRIFT</span>
-          <span className="text-xs font-mono text-muted-foreground">DROPS</span>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={`${storeName} logo`}
+              className="h-7 w-auto max-w-[140px] object-contain"
+              loading="eager"
+            />
+          ) : (
+            <>
+              <span className="text-xl font-bold tracking-tight text-cream">{storeName.split(' ')[0] || 'THRIFT'}</span>
+              <span className="text-xs font-mono text-muted-foreground">{storeName.split(' ').slice(1).join(' ') || 'DROPS'}</span>
+            </>
+          )}
         </Link>
 
         <div className="flex items-center gap-2">

@@ -5,14 +5,15 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Save, Upload, Loader2, Store, CreditCard, Mail, Instagram } from 'lucide-react';
+import { ThemeSettingsSection, type ThemeSettings } from '@/components/admin/ThemeSettingsSection';
 
-interface Settings {
+type Settings = {
   store_name: string;
   upi_id: string;
   upi_qr_image: string;
   contact_email: string;
   instagram_id: string;
-}
+} & ThemeSettings;
 
 export const SettingsPanel = () => {
   const [settings, setSettings] = useState<Settings>({
@@ -21,6 +22,22 @@ export const SettingsPanel = () => {
     upi_qr_image: '',
     contact_email: '',
     instagram_id: '',
+    theme_mode: 'dark',
+    theme_primary: '35 30% 75%',
+    theme_primary_foreground: '30 5% 8%',
+    theme_accent: '25 60% 55%',
+    theme_accent_foreground: '40 20% 95%',
+    theme_background: '30 5% 8%',
+    theme_foreground: '40 20% 92%',
+    theme_card: '30 5% 11%',
+    theme_card_foreground: '40 20% 92%',
+    theme_muted: '30 5% 18%',
+    theme_muted_foreground: '30 10% 55%',
+    theme_border: '30 5% 20%',
+    theme_ring: '35 30% 75%',
+    theme_font_sans: 'Space Grotesk',
+    theme_font_mono: 'JetBrains Mono',
+    theme_logo_url: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -44,6 +61,22 @@ export const SettingsPanel = () => {
         upi_qr_image: '',
         contact_email: '',
         instagram_id: '',
+        theme_mode: 'dark',
+        theme_primary: '35 30% 75%',
+        theme_primary_foreground: '30 5% 8%',
+        theme_accent: '25 60% 55%',
+        theme_accent_foreground: '40 20% 95%',
+        theme_background: '30 5% 8%',
+        theme_foreground: '40 20% 92%',
+        theme_card: '30 5% 11%',
+        theme_card_foreground: '40 20% 92%',
+        theme_muted: '30 5% 18%',
+        theme_muted_foreground: '30 10% 55%',
+        theme_border: '30 5% 20%',
+        theme_ring: '35 30% 75%',
+        theme_font_sans: 'Space Grotesk',
+        theme_font_mono: 'JetBrains Mono',
+        theme_logo_url: '',
       };
 
       data?.forEach((item) => {
@@ -64,12 +97,11 @@ export const SettingsPanel = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Update each setting
+      // Upsert each setting (safe even if a key row doesn't exist yet)
       for (const [key, value] of Object.entries(settings)) {
         const { error } = await supabase
           .from('store_settings')
-          .update({ value })
-          .eq('key', key);
+          .upsert({ key, value }, { onConflict: 'key' });
 
         if (error) throw error;
       }
@@ -265,6 +297,14 @@ export const SettingsPanel = () => {
           </div>
         </div>
       </div>
+
+      {/* Theme Settings */}
+      <ThemeSettingsSection
+        settings={settings}
+        setSettings={setSettings}
+        isUploading={isUploading}
+        setIsUploading={setIsUploading}
+      />
 
       {/* Save Button */}
       <Button onClick={handleSave} disabled={isSaving} className="w-full">
