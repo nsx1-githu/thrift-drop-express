@@ -1,9 +1,10 @@
-import { ShoppingBag, Search, Menu, Bell } from 'lucide-react';
+import { ShoppingBag, Search, Menu, Bell, Download } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useState, useRef } from 'react';
 import { useStoreSettings } from '@/hooks/useStoreSettings';
+import { usePwaInstallAvailable } from '@/hooks/usePwaInstallAvailable';
 
 const REQUIRED_TAPS = 5;
 const TAP_TIME_WINDOW = 2000; // 2 seconds
@@ -15,6 +16,7 @@ export const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const tapTimestamps = useRef<number[]>([]);
   const { get } = useStoreSettings();
+  const canInstall = usePwaInstallAvailable();
 
   const storeName = get('store_name', 'THRIFT DROPS');
   const logoUrl = get('theme_logo_url', '');
@@ -58,6 +60,17 @@ export const Header = () => {
         </Link>
 
         <div className="flex items-center gap-2">
+          {canInstall && (
+            <Link
+              to="/install"
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-sm hover:bg-secondary transition-colors text-sm font-medium"
+              aria-label="Install app"
+            >
+              <Download className="w-4 h-4 text-muted-foreground" />
+              <span>Install</span>
+            </Link>
+          )}
+
           <Link 
             to="/search" 
             className="p-2 rounded-sm hover:bg-secondary transition-colors"
@@ -106,6 +119,16 @@ export const Header = () => {
       {menuOpen && (
         <nav className="md:hidden border-t border-border bg-background animate-fade-in">
           <div className="container px-4 py-3 space-y-2">
+            {canInstall && (
+              <Link
+                to="/install"
+                className="flex items-center gap-2 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Download className="w-4 h-4" />
+                Install App
+              </Link>
+            )}
             <Link 
               to="/" 
               className="block py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
