@@ -1,4 +1,4 @@
-export type Category = 'jackets' | 'hoodies' | 'jeans' | 'shoes' | 'vintage' | 'streetwear';
+export type Category = 'jackets' | 'hoodies' | 'jeans' | 'shoes' | 'vintage' | 'streetwear' | 'bags' | 'caps';
 
 export type Condition = 'mint' | 'good' | 'fair';
 

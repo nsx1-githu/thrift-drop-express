@@ -184,6 +184,8 @@ export type Database = {
         | "shoes"
         | "vintage"
         | "streetwear"
+        | "bags"
+        | "caps"
       product_condition: "mint" | "good" | "fair"
       product_size: "XS" | "S" | "M" | "L" | "XL" | "XXL" | "FREE"
     }
@@ -322,6 +324,8 @@ export const Constants = {
         "shoes",
         "vintage",
         "streetwear",
+        "bags",
+        "caps",
       ],
       product_condition: ["mint", "good", "fair"],
       product_size: ["XS", "S", "M", "L", "XL", "XXL", "FREE"],
