@@ -46,7 +46,10 @@ export function useStoreSettings() {
 
     return () => {
       isMounted = false;
-      supabase.removeChannel(channel);
+      // Avoid unhandled promise rejections (Supabase can reject with AbortError during teardown)
+      void supabase.removeChannel(channel).catch(() => {
+        /* ignore */
+      });
     };
   }, []);
 
