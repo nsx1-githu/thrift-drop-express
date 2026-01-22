@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
+import { Footer } from "./components/Footer";
 import { useSecretAdmin } from "./hooks/useSecretAdmin";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
+            <Footer />
             <BottomNav />
           </div>
         </BrowserRouter>
