@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, Settings } from 'lucide-react';
+import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, Settings, Images } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import {
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { ProductForm } from '@/components/admin/ProductForm';
 import { SettingsPanel } from '@/components/admin/SettingsPanel';
+import { MediaLibraryPanel } from '@/components/admin/MediaLibraryPanel';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -165,6 +166,10 @@ const AdminDashboard = () => {
               <Package className="w-4 h-4 mr-2" />
               Products
             </TabsTrigger>
+            <TabsTrigger value="media" className="flex-1">
+              <Images className="w-4 h-4 mr-2" />
+              Media
+            </TabsTrigger>
             <TabsTrigger value="settings" className="flex-1">
               <Settings className="w-4 h-4 mr-2" />
               Settings
@@ -254,6 +259,10 @@ const AdminDashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="media">
+            <MediaLibraryPanel />
           </TabsContent>
 
           <TabsContent value="settings">
