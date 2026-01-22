@@ -23,14 +23,7 @@ export const products: Product[] = [
 export const categories = [
   { id: 'all', name: 'All', icon: '🏷️' },
   { id: 'jackets', name: 'Jackets', icon: '🧥' },
-  { id: 'hoodies', name: 'Hoodies', icon: '👕' },
-  { id: 'jeans', name: 'Jeans', icon: '👖' },
-  { id: 'shoes', name: 'Shoes', icon: '👟' },
-  { id: 'bags', name: 'Bags', icon: '👜' },
-  { id: 'caps', name: 'Caps', icon: '🧢' },
-  { id: 'vintage', name: 'Vintage', icon: '✨' },
-  { id: 'streetwear', name: 'Streetwear', icon: '🔥' },
 ] as const;
 
-export const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'FREE'] as const;
-export const conditions = ['mint', 'good', 'fair'] as const;
+export const sizes = ['L'] as const;
+export const conditions = ['good'] as const;
