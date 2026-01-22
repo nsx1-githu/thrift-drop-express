@@ -21,6 +21,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Search from "./pages/Search";
 import TrackOrder from "./pages/TrackOrder";
 import Notifications from "./pages/Notifications";
+import Install from "./pages/Install";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -58,6 +59,7 @@ const App = () => (
                     <Route path="/search" element={<Search />} />
                     <Route path="/track-order" element={<TrackOrder />} />
                     <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/install" element={<Install />} />
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="*" element={<NotFound />} />
