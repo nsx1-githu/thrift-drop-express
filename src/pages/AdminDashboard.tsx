@@ -6,6 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
@@ -37,6 +39,23 @@ const AdminDashboard = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
+  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [deleteImagesToo, setDeleteImagesToo] = useState(false);
+
+  const BUCKET = 'product-images';
+
+  const storagePathFromPublicUrl = (url: string) => {
+    try {
+      // Typical pattern: .../storage/v1/object/public/product-images/<path>
+      const marker = `/${BUCKET}/`;
+      const idx = url.indexOf(marker);
+      if (idx === -1) return null;
+      const pathWithQuery = url.slice(idx + marker.length);
+      return pathWithQuery.split('?')[0];
+    } catch {
+      return null;
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -77,12 +96,48 @@ const AdminDashboard = () => {
     if (!deleteProductId) return;
 
     try {
+      const images = deleteProduct?.images ?? [];
+
+      // Determine which images are safe to delete (not referenced by any other product)
+      let pathsToDelete: string[] = [];
+      if (deleteImagesToo && images.length > 0) {
+        const { data: otherRefs, error: overlapError } = await supabase
+          .from('products')
+          .select('id, images')
+          .neq('id', deleteProductId)
+          .overlaps('images', images);
+
+        if (overlapError) throw overlapError;
+
+        const referencedElsewhere = new Set<string>();
+        (otherRefs ?? []).forEach((p) => {
+          (p.images ?? []).forEach((u: string) => referencedElsewhere.add(u));
+        });
+
+        const unusedUrls = images.filter((u) => !referencedElsewhere.has(u));
+        pathsToDelete = unusedUrls
+          .map(storagePathFromPublicUrl)
+          .filter((p): p is string => !!p)
+          // Only auto-clean product uploads; keep settings assets (logo/qr) safe
+          .filter((p) => p.startsWith('products/'));
+      }
+
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', deleteProductId);
 
       if (error) throw error;
+
+      if (pathsToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from(BUCKET)
+          .remove(pathsToDelete);
+        if (storageError) {
+          console.error('Error deleting product images from storage:', storageError);
+          toast.error('Product deleted, but failed to delete some images');
+        }
+      }
       
       toast.success('Product deleted successfully');
       fetchProducts();
@@ -91,6 +146,8 @@ const AdminDashboard = () => {
       toast.error('Failed to delete product');
     } finally {
       setDeleteProductId(null);
+      setDeleteProduct(null);
+      setDeleteImagesToo(false);
     }
   };
 
@@ -249,7 +306,11 @@ const AdminDashboard = () => {
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        onClick={() => setDeleteProductId(product.id)}
+                        onClick={() => {
+                          setDeleteProductId(product.id);
+                          setDeleteProduct(product);
+                          setDeleteImagesToo(false);
+                        }}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -272,7 +333,16 @@ const AdminDashboard = () => {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteProductId} onOpenChange={() => setDeleteProductId(null)}>
+      <AlertDialog
+        open={!!deleteProductId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteProductId(null);
+            setDeleteProduct(null);
+            setDeleteImagesToo(false);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Product?</AlertDialogTitle>
@@ -280,6 +350,23 @@ const AdminDashboard = () => {
               This action cannot be undone. The product will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 p-3">
+            <Checkbox
+              id="delete_images_too"
+              checked={deleteImagesToo}
+              onCheckedChange={(v) => setDeleteImagesToo(Boolean(v))}
+            />
+            <div className="grid gap-1">
+              <Label htmlFor="delete_images_too" className="text-sm font-medium">
+                Also delete unused product images
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Only removes images that are not used by any other product and are stored under <span className="font-mono">products/</span>.
+              </p>
+            </div>
+          </div>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
