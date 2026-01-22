@@ -32,7 +32,8 @@ const Checkout = () => {
   });
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
-  const total = getTotal();
+  // Backend validation expects integer amounts.
+  const total = Math.round(getTotal());
   const shippingFree = total >= 999;
   const shippingCost = shippingFree ? 0 : 79;
   const finalTotal = total + shippingCost;
@@ -69,10 +70,11 @@ const Checkout = () => {
     fetchSettings();
   }, []);
 
-  if (items.length === 0) {
-    navigate('/cart');
-    return null;
-  }
+  useEffect(() => {
+    if (items.length === 0) navigate('/cart');
+  }, [items.length, navigate]);
+
+  if (items.length === 0) return null;
 
   const copyUpiId = async () => {
     await navigator.clipboard.writeText(settings.upi_id);
@@ -131,7 +133,7 @@ const Checkout = () => {
       const orderItems = items.map(item => ({
         product_id: item.product.id,
         name: item.product.name,
-        price: item.product.price,
+        price: Math.round(item.product.price),
         quantity: item.quantity,
         image: item.product.images[0],
       }));
@@ -144,13 +146,17 @@ const Checkout = () => {
           customer_address: formData.address.trim(),
           items: orderItems,
           subtotal: total,
-          shipping: shippingCost,
-          total: finalTotal,
+          shipping: Math.round(shippingCost),
+          total: Math.round(finalTotal),
           payment_method: 'UPI',
           payment_reference: upiRefNumber.trim(),
         },
       });
       if (error) throw error;
+
+      // Some backends may return a 200 with an error payload; handle defensively.
+      const payloadError = (data as any)?.error as string | undefined;
+      if (payloadError) throw new Error(payloadError);
       const orderId = (data as any)?.orderId as string | undefined;
       if (!orderId) throw new Error('Missing orderId');
 
@@ -175,7 +181,11 @@ const Checkout = () => {
       navigate('/order-confirmation');
     } catch (error) {
       console.error('Order error:', error);
-      toast.error('Failed to place order. Please try again.');
+      const message =
+        (error as any)?.message ||
+        (error as any)?.error_description ||
+        'Failed to place order. Please try again.';
+      toast.error(message);
     } finally {
       setIsProcessing(false);
     }
