@@ -127,9 +127,6 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Generate order ID
-      const orderId = `THR${Date.now().toString(36).toUpperCase()}`;
-      
       // Prepare order items for database
       const orderItems = items.map(item => ({
         product_id: item.product.id,
@@ -139,22 +136,23 @@ const Checkout = () => {
         image: item.product.images[0],
       }));
 
-      // Save order to database
-      const { error } = await supabase.from('orders').insert({
-        order_id: orderId,
-        customer_name: formData.name.trim(),
-        customer_phone: formData.phone.trim(),
-        customer_address: formData.address.trim(),
-        items: orderItems,
-        subtotal: total,
-        shipping: shippingCost,
-        total: finalTotal,
-        payment_method: 'UPI',
-        payment_status: 'pending', // Pending verification
-        razorpay_payment_id: upiRefNumber.trim(), // Using this field for UPI reference
+      // Create order via backend (prevents public direct INSERT access)
+      const { data, error } = await supabase.functions.invoke('create-order', {
+        body: {
+          customer_name: formData.name.trim(),
+          customer_phone: formData.phone.trim(),
+          customer_address: formData.address.trim(),
+          items: orderItems,
+          subtotal: total,
+          shipping: shippingCost,
+          total: finalTotal,
+          payment_method: 'UPI',
+          payment_reference: upiRefNumber.trim(),
+        },
       });
-
       if (error) throw error;
+      const orderId = (data as any)?.orderId as string | undefined;
+      if (!orderId) throw new Error('Missing orderId');
 
       // Add notification
       addNotification({
