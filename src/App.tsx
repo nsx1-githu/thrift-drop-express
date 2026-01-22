@@ -12,6 +12,7 @@ import { Footer } from "./components/Footer";
 import { ThemeApplier } from "./components/ThemeApplier";
 import { SeoApplier } from "./components/SeoApplier";
 import { useSecretAdmin } from "./hooks/useSecretAdmin";
+import { useCustomerOrderStatusNotifications } from "./hooks/useCustomerOrderStatusNotifications";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -34,6 +35,12 @@ const SecretAdminListener = () => {
   return null;
 };
 
+// Customer-side listener: polls backend for status changes and creates in-app notifications
+const CustomerOrderStatusListener = () => {
+  useCustomerOrderStatusNotifications();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
@@ -44,6 +51,7 @@ const App = () => (
           <HelmetProvider>
             <BrowserRouter>
               <SecretAdminListener />
+              <CustomerOrderStatusListener />
               <ThemeApplier />
               <SeoApplier />
               <div className="min-h-screen bg-background">

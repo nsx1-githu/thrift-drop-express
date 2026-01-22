@@ -15,7 +15,7 @@ interface StoreSettings {
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, getTotal, clearCart } = useCartStore();
-  const { addNotification } = useNotificationStore();
+  const { addNotification, upsertCustomerOrder } = useNotificationStore();
   const [upiRefNumber, setUpiRefNumber] = useState('');
   const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
@@ -166,6 +166,13 @@ const Checkout = () => {
         message: `Your order ${orderId} has been placed. Payment verification is pending.`,
         type: 'order',
         orderId,
+      });
+
+      // Remember this order on the customer's device so we can notify on Accept/Reject later.
+      upsertCustomerOrder({
+        orderId,
+        phone: formData.phone.trim(),
+        status: 'pending',
       });
 
       // Store order details for confirmation page
