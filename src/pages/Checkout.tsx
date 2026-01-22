@@ -309,37 +309,56 @@ const Checkout = () => {
               <p className="text-2xl font-bold text-primary">₹{finalTotal.toLocaleString()}</p>
             </div>
 
-            {/* QR Code */}
-            <div className="flex justify-center">
-              {isLoadingSettings ? (
-                <div className="w-48 h-48 flex items-center justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <img 
-                  src={qrCodeUrl} 
-                  alt="UPI QR Code" 
-                  className="w-48 h-48 rounded-lg bg-white p-2 object-contain"
-                />
-              )}
-            </div>
-
-            {/* UPI ID */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground">UPI ID</p>
-                <p className="font-mono text-sm">{settings.upi_id}</p>
-              </div>
-              <button 
-                onClick={copyUpiId}
-                className="p-2 hover:bg-muted rounded-md transition-colors"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 text-success" />
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* QR Code */}
+              <div className="flex justify-center">
+                {isLoadingSettings ? (
+                  <div className="w-48 h-48 flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
                 ) : (
-                  <Copy className="w-4 h-4" />
+                  <img
+                    src={qrCodeUrl}
+                    alt="UPI QR Code"
+                    className="w-48 h-48 rounded-lg bg-white p-2 object-contain"
+                  />
                 )}
-              </button>
+              </div>
+
+              {/* Screenshot + UPI details */}
+              <div className="space-y-3">
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground">UPI Name</p>
+                  <p className="text-sm font-medium">{settings.store_name}</p>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground">UPI ID</p>
+                    <p className="font-mono text-sm">{settings.upi_id}</p>
+                  </div>
+                  <button
+                    onClick={copyUpiId}
+                    className="p-2 hover:bg-muted rounded-md transition-colors"
+                  >
+                    {copied ? (
+                      <Check className="w-4 h-4 text-success" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="rounded-lg border border-border bg-card p-3">
+                  <p className="text-xs text-muted-foreground mb-2">Screenshot example (for reference number)</p>
+                  <img
+                    src="/placeholder.svg"
+                    alt="Example payment screenshot showing UPI reference number"
+                    className="w-full max-h-40 object-contain rounded-md bg-background"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Instructions */}

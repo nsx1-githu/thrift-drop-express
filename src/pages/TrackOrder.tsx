@@ -153,7 +153,6 @@ const TrackOrder = () => {
                 <div className="bg-card rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="font-mono font-semibold">{order.order_id}</p>
                       <p className="text-xs text-muted-foreground">
                         Placed on {new Date(order.created_at).toLocaleDateString()}
                       </p>
