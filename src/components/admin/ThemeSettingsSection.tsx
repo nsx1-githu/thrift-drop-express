@@ -48,6 +48,13 @@ export function ThemeSettingsSection({
   const fontOptions = useMemo(
     () => [
       { label: "Space Grotesk", value: "Space Grotesk" },
+      { label: "Poppins", value: "Poppins" },
+      { label: "Montserrat", value: "Montserrat" },
+      { label: "Oswald", value: "Oswald" },
+      { label: "Nunito", value: "Nunito" },
+      { label: "Roboto Slab", value: "Roboto Slab" },
+      { label: "Playfair Display", value: "Playfair Display" },
+      { label: "Bebas Neue", value: "Bebas Neue" },
       { label: "System", value: "system-ui" },
     ],
     [],
@@ -56,6 +63,7 @@ export function ThemeSettingsSection({
   const monoOptions = useMemo(
     () => [
       { label: "JetBrains Mono", value: "JetBrains Mono" },
+      { label: "Roboto Mono", value: "Roboto Mono" },
       { label: "System Mono", value: "ui-monospace" },
     ],
     [],
