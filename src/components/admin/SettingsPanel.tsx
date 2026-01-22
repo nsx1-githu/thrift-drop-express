@@ -88,7 +88,11 @@ export const SettingsPanel = () => {
 
       data?.forEach((item) => {
         if (item.key in settingsMap) {
-          settingsMap[item.key as keyof Settings] = item.value;
+          // Keep defaults when backend value is empty (prevents blank selects/inputs)
+          const nextValue = (item.value ?? "").toString();
+          if (nextValue.trim() !== "") {
+            settingsMap[item.key as keyof Settings] = nextValue as any;
+          }
         }
       });
 

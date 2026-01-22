@@ -200,7 +200,7 @@ export function ThemeSettingsSection({
           <select
             id="theme_font_sans"
             className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={settings.theme_font_sans}
+            value={settings.theme_font_sans || fontOptions[0]?.value || "Space Grotesk"}
             onChange={(e) => setSettings((p) => ({ ...p, theme_font_sans: e.target.value }))}
           >
             {fontOptions.map((o) => (
@@ -219,7 +219,7 @@ export function ThemeSettingsSection({
           <select
             id="theme_font_mono"
             className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={settings.theme_font_mono}
+            value={settings.theme_font_mono || monoOptions[0]?.value || "JetBrains Mono"}
             onChange={(e) => setSettings((p) => ({ ...p, theme_font_mono: e.target.value }))}
           >
             {monoOptions.map((o) => (
