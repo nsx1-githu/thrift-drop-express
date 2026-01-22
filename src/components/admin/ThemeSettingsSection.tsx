@@ -35,11 +35,15 @@ export function ThemeSettingsSection({
   setSettings,
   isUploading,
   setIsUploading,
+  isSaving,
+  onApplyPreset,
 }: {
   settings: ThemeSettings;
   setSettings: React.Dispatch<React.SetStateAction<ThemeSettings>>;
   isUploading: boolean;
   setIsUploading: React.Dispatch<React.SetStateAction<boolean>>;
+  isSaving?: boolean;
+  onApplyPreset?: (preset: Partial<ThemeSettings>) => Promise<void> | void;
 }) {
   const fontOptions = useMemo(
     () => [
@@ -56,6 +60,153 @@ export function ThemeSettingsSection({
     ],
     [],
   );
+
+  const presets = useMemo(
+    () =>
+      [
+        {
+          id: "streetwear_dark",
+          label: "Streetwear Dark",
+          values: {
+            theme_mode: "dark",
+            theme_primary: "35 30% 75%",
+            theme_primary_foreground: "30 5% 8%",
+            theme_accent: "25 60% 55%",
+            theme_accent_foreground: "40 20% 95%",
+            theme_background: "30 5% 8%",
+            theme_foreground: "40 20% 92%",
+            theme_card: "30 5% 11%",
+            theme_card_foreground: "40 20% 92%",
+            theme_muted: "30 5% 18%",
+            theme_muted_foreground: "30 10% 55%",
+            theme_border: "30 5% 20%",
+            theme_ring: "35 30% 75%",
+            theme_font_sans: "Space Grotesk",
+            theme_font_mono: "JetBrains Mono",
+          } satisfies Partial<ThemeSettings>,
+        },
+        {
+          id: "vintage_cream",
+          label: "Vintage Cream",
+          values: {
+            theme_mode: "light",
+            theme_primary: "18 65% 36%",
+            theme_primary_foreground: "40 20% 96%",
+            theme_accent: "35 55% 55%",
+            theme_accent_foreground: "30 25% 12%",
+            theme_background: "40 30% 96%",
+            theme_foreground: "30 25% 12%",
+            theme_card: "38 28% 92%",
+            theme_card_foreground: "30 25% 12%",
+            theme_muted: "38 18% 88%",
+            theme_muted_foreground: "30 15% 35%",
+            theme_border: "32 15% 82%",
+            theme_ring: "18 65% 36%",
+            theme_font_sans: "Space Grotesk",
+            theme_font_mono: "JetBrains Mono",
+          } satisfies Partial<ThemeSettings>,
+        },
+        {
+          id: "minimal_light",
+          label: "Minimal Light",
+          values: {
+            theme_mode: "light",
+            theme_primary: "222 14% 16%",
+            theme_primary_foreground: "0 0% 100%",
+            theme_accent: "210 20% 92%",
+            theme_accent_foreground: "222 14% 16%",
+            theme_background: "0 0% 100%",
+            theme_foreground: "222 14% 16%",
+            theme_card: "210 20% 98%",
+            theme_card_foreground: "222 14% 16%",
+            theme_muted: "210 20% 94%",
+            theme_muted_foreground: "220 10% 40%",
+            theme_border: "214 18% 86%",
+            theme_ring: "222 14% 16%",
+            theme_font_sans: "Space Grotesk",
+            theme_font_mono: "JetBrains Mono",
+          } satisfies Partial<ThemeSettings>,
+        },
+        {
+          id: "neon_night",
+          label: "Neon Night",
+          values: {
+            theme_mode: "dark",
+            theme_primary: "168 88% 48%",
+            theme_primary_foreground: "200 25% 6%",
+            theme_accent: "300 85% 60%",
+            theme_accent_foreground: "200 25% 6%",
+            theme_background: "210 25% 6%",
+            theme_foreground: "210 20% 92%",
+            theme_card: "210 22% 9%",
+            theme_card_foreground: "210 20% 92%",
+            theme_muted: "210 18% 14%",
+            theme_muted_foreground: "210 10% 65%",
+            theme_border: "210 16% 18%",
+            theme_ring: "168 88% 48%",
+            theme_font_sans: "Space Grotesk",
+            theme_font_mono: "JetBrains Mono",
+          } satisfies Partial<ThemeSettings>,
+        },
+        {
+          id: "olive_utility",
+          label: "Olive Utility",
+          values: {
+            theme_mode: "dark",
+            theme_primary: "82 28% 45%",
+            theme_primary_foreground: "60 20% 96%",
+            theme_accent: "20 65% 52%",
+            theme_accent_foreground: "60 20% 96%",
+            theme_background: "60 10% 8%",
+            theme_foreground: "60 20% 92%",
+            theme_card: "60 10% 11%",
+            theme_card_foreground: "60 20% 92%",
+            theme_muted: "60 8% 16%",
+            theme_muted_foreground: "60 10% 60%",
+            theme_border: "60 8% 20%",
+            theme_ring: "82 28% 45%",
+            theme_font_sans: "Space Grotesk",
+            theme_font_mono: "JetBrains Mono",
+          } satisfies Partial<ThemeSettings>,
+        },
+      ] as const,
+    [],
+  );
+
+  const applyPreset = async (preset: Partial<ThemeSettings>) => {
+    try {
+      // Client-safe validation (presets are internal constants, but keep it consistent)
+      const keysToValidate: Array<keyof ThemeSettings> = [
+        "theme_primary",
+        "theme_primary_foreground",
+        "theme_accent",
+        "theme_accent_foreground",
+        "theme_background",
+        "theme_foreground",
+        "theme_card",
+        "theme_card_foreground",
+        "theme_muted",
+        "theme_muted_foreground",
+        "theme_border",
+        "theme_ring",
+      ];
+      for (const k of keysToValidate) {
+        const v = (preset[k] ?? "").toString().trim();
+        if (v && !validateHsl(v, k)) return;
+      }
+
+      // Apply + Save
+      if (onApplyPreset) {
+        await onApplyPreset(preset);
+      } else {
+        setSettings((p) => ({ ...p, ...preset }));
+        toast.success("Preset applied (tap Save Settings)");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to apply preset");
+    }
+  };
 
   const validateHsl = (value: string, label: string) => {
     const v = value.trim();
@@ -110,6 +261,28 @@ export function ThemeSettingsSection({
       <div className="flex items-center gap-2 mb-4">
         <Palette className="w-5 h-5 text-primary" />
         <h3 className="font-semibold">Theme</h3>
+      </div>
+
+      {/* Presets */}
+      <div className="mb-6">
+        <p className="text-sm font-medium mb-2">Quick presets</p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {presets.map((p) => (
+            <Button
+              key={p.id}
+              type="button"
+              variant="outline"
+              className="justify-start"
+              disabled={Boolean(isSaving) || Boolean(isUploading)}
+              onClick={() => void applyPreset(p.values)}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Tap a preset to apply it{onApplyPreset ? " and save" : ""}.
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

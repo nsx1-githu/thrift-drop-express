@@ -105,12 +105,13 @@ export const SettingsPanel = () => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (nextSettings?: Settings) => {
+    const source = nextSettings ?? settings;
     // Client-side validation for SEO (prevents broken head tags / invalid URLs)
     const seoValidation = validateSeoSettings({
-      seo_title: settings.seo_title,
-      seo_description: settings.seo_description,
-      seo_og_image_url: settings.seo_og_image_url,
+      seo_title: source.seo_title,
+      seo_description: source.seo_description,
+      seo_og_image_url: source.seo_og_image_url,
     });
     if (!seoValidation.success) {
       toast.error(seoValidation.error.issues[0]?.message || 'Please fix SEO settings');
@@ -120,7 +121,7 @@ export const SettingsPanel = () => {
     setIsSaving(true);
     try {
       // Upsert each setting (safe even if a key row doesn't exist yet)
-      for (const [key, value] of Object.entries(settings)) {
+        for (const [key, value] of Object.entries(source)) {
         const { error } = await supabase
           .from('store_settings')
           .upsert({ key, value }, { onConflict: 'key' });
@@ -134,6 +135,17 @@ export const SettingsPanel = () => {
       toast.error('Failed to save settings');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const applyThemePreset = async (preset: Partial<ThemeSettings>) => {
+    let merged: Settings | null = null;
+    setSettings((prev) => {
+      merged = { ...prev, ...preset };
+      return merged;
+    });
+    if (merged) {
+      await handleSave(merged);
     }
   };
 
@@ -326,13 +338,15 @@ export const SettingsPanel = () => {
         setSettings={setSettings}
         isUploading={isUploading}
         setIsUploading={setIsUploading}
+        isSaving={isSaving}
+        onApplyPreset={applyThemePreset}
       />
 
       {/* SEO Settings */}
       <SeoSettingsSection settings={settings} setSettings={setSettings} />
 
       {/* Save Button */}
-      <Button onClick={handleSave} disabled={isSaving} className="w-full">
+      <Button onClick={() => void handleSave()} disabled={isSaving} className="w-full">
         {isSaving ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         ) : (
