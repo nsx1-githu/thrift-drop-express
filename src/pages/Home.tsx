@@ -5,7 +5,6 @@ import { products } from '@/data/products';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category } from '@/types/product';
-import { Footer } from '@/components/Footer';
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -104,9 +103,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 };
