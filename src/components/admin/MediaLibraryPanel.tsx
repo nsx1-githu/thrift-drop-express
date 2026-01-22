@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +15,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { Image as ImageIcon, RefreshCw, Trash2, Upload } from "lucide-react";
+import { Image as ImageIcon, Package, RefreshCw, Search, Trash2, Upload } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
 
 type StorageFolder = "all" | "products" | "settings";
 
@@ -25,6 +27,8 @@ type MediaItem = {
   publicUrl: string;
   createdAt?: string;
 };
+
+type ProductRow = Database["public"]["Tables"]["products"]["Row"];
 
 const BUCKET = "product-images";
 
@@ -67,6 +71,12 @@ export function MediaLibraryPanel() {
   const [confirmDeletePath, setConfirmDeletePath] = useState<string | null>(null);
   const [replaceTargetPath, setReplaceTargetPath] = useState<string | null>(null);
 
+   // Products quick list (for sold out)
+   const [products, setProducts] = useState<ProductRow[]>([]);
+   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+   const [productQuery, setProductQuery] = useState("");
+   const [togglingId, setTogglingId] = useState<string | null>(null);
+
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const fetchMedia = async () => {
@@ -91,8 +101,45 @@ export function MediaLibraryPanel() {
     }
   };
 
+  const fetchProducts = async () => {
+    setIsLoadingProducts(true);
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, brand, price, images, sold_out, created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setProducts((data ?? []) as ProductRow[]);
+    } catch (e) {
+      console.error("Error fetching products (media panel):", e);
+      toast.error("Failed to load products");
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  const toggleSoldOut = async (id: string, next: boolean) => {
+    setTogglingId(id);
+    // Optimistic UI
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, sold_out: next } : p)));
+    try {
+      const { error } = await supabase.from("products").update({ sold_out: next }).eq("id", id);
+      if (error) throw error;
+      toast.success(next ? "Marked as sold out" : "Marked as available");
+    } catch (e) {
+      console.error("Error updating sold_out:", e);
+      // revert on failure
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, sold_out: !next } : p)));
+      toast.error("Failed to update product");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   useEffect(() => {
     fetchMedia();
+    fetchProducts();
   }, []);
 
   const visibleItems = useMemo(() => {
@@ -104,6 +151,18 @@ export function MediaLibraryPanel() {
       })
       .filter((i) => (q ? i.path.toLowerCase().includes(q) : true));
   }, [items, activeFolder, query]);
+
+  const visibleProducts = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
+    return products.filter((p) => {
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q)
+      );
+    });
+  }, [products, productQuery]);
 
   const handleDelete = async () => {
     const path = confirmDeletePath;
@@ -163,6 +222,82 @@ export function MediaLibraryPanel() {
 
   return (
     <div className="space-y-4">
+      {/* Product quick list */}
+      <div className="bg-card rounded-lg border p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Package className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold">Products (mark sold out)</h3>
+          </div>
+          <Button variant="outline" size="icon" onClick={fetchProducts} disabled={isLoadingProducts}>
+            <RefreshCw className={`w-4 h-4 ${isLoadingProducts ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={productQuery}
+              onChange={(e) => setProductQuery(e.target.value)}
+              placeholder="Search products by name/brand…"
+              className="pl-9"
+            />
+          </div>
+          <div className="text-xs text-muted-foreground sm:text-right">
+            {visibleProducts.length} item(s)
+          </div>
+        </div>
+
+        {isLoadingProducts ? (
+          <div className="flex justify-center py-8">
+            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : visibleProducts.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p>No products found</p>
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-2">
+            {visibleProducts.map((p) => (
+              <div key={p.id} className="flex items-center gap-3 rounded-lg border bg-background p-3">
+                <img
+                  src={p.images?.[0] || "/placeholder.svg"}
+                  alt={p.name}
+                  className="w-12 h-12 rounded object-cover bg-muted"
+                  loading="lazy"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    {p.sold_out && (
+                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                        Sold Out
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{p.brand}</p>
+                  <p className="text-xs font-medium">₹{p.price.toLocaleString()}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground hidden sm:block">Sold out</span>
+                  <Switch
+                    checked={p.sold_out}
+                    disabled={togglingId === p.id}
+                    onCheckedChange={(checked) => void toggleSoldOut(p.id, checked)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground mt-3">
+          Tip: if a product is sold out, it stays visible but shows as unavailable on the storefront.
+        </p>
+      </div>
+
       <div className="bg-card rounded-lg border p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
