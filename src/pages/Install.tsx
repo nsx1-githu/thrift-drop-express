@@ -57,10 +57,20 @@ export default function Install() {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Install the app</h1>
-        <p className="text-sm text-muted-foreground">
-          Install this store to your home screen for a faster, app-like experience.
-        </p>
+        <div className="flex items-center gap-3">
+          <img
+            src="/app-icon.png"
+            alt="Chichi Thrifts app icon"
+            className="h-10 w-10 rounded-lg object-cover"
+            loading="eager"
+          />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Install the app</h1>
+            <p className="text-sm text-muted-foreground">
+              Install this store to your home screen for a faster, app-like experience.
+            </p>
+          </div>
+        </div>
       </header>
 
       <div className="mt-6 space-y-4">

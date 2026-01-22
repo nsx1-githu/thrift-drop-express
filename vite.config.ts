@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt", "pwa-512.png"],
+      includeAssets: ["favicon.ico", "robots.txt", "app-icon.png"],
       manifest: {
         name: "Chichi Drop Go",
         short_name: "Chichi Drop",
@@ -29,16 +29,23 @@ export default defineConfig(({ mode }) => ({
         background_color: "#1a1816",
         icons: [
           {
-            src: "/pwa-512.png",
+            src: "/app-icon.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
             // Using the same source for broad compatibility.
             // Browsers can downscale as needed.
-            src: "/pwa-512.png",
+            src: "/app-icon.png",
             sizes: "192x192",
             type: "image/png",
+          },
+          {
+            // Maskable icon for Android adaptive icons (uses same source; browsers downscale/crop).
+            src: "/app-icon.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
         ],
       },
