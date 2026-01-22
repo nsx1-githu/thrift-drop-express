@@ -62,9 +62,17 @@ type CreateOrderPayload = {
   payment_reference: string;
 };
 
-function isUuid(v: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    .test(v);
+function isValidProductId(v: string) {
+  // Storefront may use non-UUID IDs (e.g., mock catalog), while DB uses UUIDs.
+  // Orders store `items` as JSON and do not rely on a FK lookup, so accept both.
+  const trimmed = v.trim();
+  if (trimmed.length < 1 || trimmed.length > 64) return false;
+  const uuidOk =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      trimmed,
+    );
+  const simpleOk = /^[A-Za-z0-9_-]+$/.test(trimmed);
+  return uuidOk || simpleOk;
 }
 
 function asTrimmedString(v: unknown): string | null {
@@ -130,7 +138,7 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
     const price = asInt(it.price);
     const quantity = asInt(it.quantity);
 
-    if (!product_id || !isUuid(product_id)) return { ok: false, error: "Invalid product id" };
+    if (!product_id || !isValidProductId(product_id)) return { ok: false, error: "Invalid product id" };
     if (!name || name.length > 200) return { ok: false, error: "Invalid item name" };
     if (!image || image.length > 2048) return { ok: false, error: "Invalid item image" };
     if (price === null || price < 0 || price > 10_000_000) return { ok: false, error: "Invalid item price" };
