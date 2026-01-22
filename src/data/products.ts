@@ -173,6 +173,8 @@ export const categories = [
   { id: 'hoodies', name: 'Hoodies', icon: '👕' },
   { id: 'jeans', name: 'Jeans', icon: '👖' },
   { id: 'shoes', name: 'Shoes', icon: '👟' },
+  { id: 'bags', name: 'Bags', icon: '👜' },
+  { id: 'caps', name: 'Caps', icon: '🧢' },
   { id: 'vintage', name: 'Vintage', icon: '✨' },
   { id: 'streetwear', name: 'Streetwear', icon: '🔥' },
 ] as const;
