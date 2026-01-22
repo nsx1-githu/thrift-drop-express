@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Save, Upload, Loader2, Store, CreditCard, Mail, Instagram } from 'lucide-react';
 import { ThemeSettingsSection, type ThemeSettings } from '@/components/admin/ThemeSettingsSection';
+import { SeoSettingsSection, validateSeoSettings, type SeoSettings } from '@/components/admin/SeoSettingsSection';
 
 type Settings = {
   store_name: string;
@@ -13,7 +14,7 @@ type Settings = {
   upi_qr_image: string;
   contact_email: string;
   instagram_id: string;
-} & ThemeSettings;
+} & ThemeSettings & SeoSettings;
 
 export const SettingsPanel = () => {
   const [settings, setSettings] = useState<Settings>({
@@ -22,6 +23,9 @@ export const SettingsPanel = () => {
     upi_qr_image: '',
     contact_email: '',
     instagram_id: '',
+    seo_title: '',
+    seo_description: '',
+    seo_og_image_url: '',
     theme_mode: 'dark',
     theme_primary: '35 30% 75%',
     theme_primary_foreground: '30 5% 8%',
@@ -61,6 +65,9 @@ export const SettingsPanel = () => {
         upi_qr_image: '',
         contact_email: '',
         instagram_id: '',
+        seo_title: '',
+        seo_description: '',
+        seo_og_image_url: '',
         theme_mode: 'dark',
         theme_primary: '35 30% 75%',
         theme_primary_foreground: '30 5% 8%',
@@ -95,6 +102,17 @@ export const SettingsPanel = () => {
   };
 
   const handleSave = async () => {
+    // Client-side validation for SEO (prevents broken head tags / invalid URLs)
+    const seoValidation = validateSeoSettings({
+      seo_title: settings.seo_title,
+      seo_description: settings.seo_description,
+      seo_og_image_url: settings.seo_og_image_url,
+    });
+    if (!seoValidation.success) {
+      toast.error(seoValidation.error.issues[0]?.message || 'Please fix SEO settings');
+      return;
+    }
+
     setIsSaving(true);
     try {
       // Upsert each setting (safe even if a key row doesn't exist yet)
@@ -305,6 +323,9 @@ export const SettingsPanel = () => {
         isUploading={isUploading}
         setIsUploading={setIsUploading}
       />
+
+      {/* SEO Settings */}
+      <SeoSettingsSection settings={settings} setSettings={setSettings} />
 
       {/* Save Button */}
       <Button onClick={handleSave} disabled={isSaving} className="w-full">
