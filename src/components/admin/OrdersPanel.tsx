@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, Package, Search, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Package, Search, RefreshCw, Phone, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,34 @@ export const OrdersPanel = () => {
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  const copyText = async (text: string, label: string) => {
+    const value = (text ?? '').trim();
+    if (!value) {
+      toast.error(`${label} not available`);
+      return;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = value;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+      toast.success(`${label} copied`);
+    } catch (e) {
+      console.error('Copy failed:', e);
+      toast.error('Copy failed');
+    }
+  };
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -230,6 +258,43 @@ export const OrdersPanel = () => {
               {/* Expanded Details */}
               {expandedOrder === order.id && (
                 <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+                  {/* Quick actions */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button asChild variant="outline" size="sm" className="h-9">
+                      <a href={`tel:${order.customer_phone}`}>
+                        <Phone className="w-4 h-4 mr-2" />
+                        Call customer
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9"
+                      onClick={() => copyText(order.customer_phone, 'Phone')}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy phone
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9"
+                      onClick={() => copyText(order.customer_address, 'Address')}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy address
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9"
+                      onClick={() => copyText(order.razorpay_payment_id || '', 'UTR')}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy UTR
+                    </Button>
+                  </div>
+
                   {/* Items */}
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground mb-2">ITEMS</p>
