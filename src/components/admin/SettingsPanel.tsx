@@ -4,12 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Upload, Loader2, Store, CreditCard } from 'lucide-react';
+import { Save, Upload, Loader2, Store, CreditCard, Mail, Instagram } from 'lucide-react';
 
 interface Settings {
   store_name: string;
   upi_id: string;
   upi_qr_image: string;
+  contact_email: string;
+  instagram_id: string;
 }
 
 export const SettingsPanel = () => {
@@ -17,6 +19,8 @@ export const SettingsPanel = () => {
     store_name: '',
     upi_id: '',
     upi_qr_image: '',
+    contact_email: '',
+    instagram_id: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,6 +42,8 @@ export const SettingsPanel = () => {
         store_name: '',
         upi_id: '',
         upi_qr_image: '',
+        contact_email: '',
+        instagram_id: '',
       };
 
       data?.forEach((item) => {
@@ -144,6 +150,41 @@ export const SettingsPanel = () => {
               placeholder="Enter your store name"
               className="mt-1"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="contact_email">Contact Email</Label>
+            <div className="relative mt-1">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="contact_email"
+                type="email"
+                value={settings.contact_email}
+                onChange={(e) => setSettings(prev => ({ ...prev, contact_email: e.target.value }))}
+                placeholder="contact@yourstore.com"
+                className="pl-10"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Customers can reach you at this email
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="instagram_id">Instagram ID</Label>
+            <div className="relative mt-1">
+              <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="instagram_id"
+                value={settings.instagram_id}
+                onChange={(e) => setSettings(prev => ({ ...prev, instagram_id: e.target.value }))}
+                placeholder="@yourstore"
+                className="pl-10"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Your Instagram handle (without @)
+            </p>
           </div>
         </div>
       </div>
