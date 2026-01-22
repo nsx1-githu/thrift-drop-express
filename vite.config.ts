@@ -77,5 +77,8 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Prevent "Invalid hook call" / "Cannot read properties of null (reading 'useEffect')"
+    // by ensuring Vite bundles a single React instance.
+    dedupe: ["react", "react-dom"],
   },
 }));
