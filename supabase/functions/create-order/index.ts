@@ -60,6 +60,8 @@ type CreateOrderPayload = {
   total: number;
   payment_method: "UPI";
   payment_reference: string;
+  payment_payer_name?: string;
+  payment_proof_url?: string;
 };
 
 function isValidProductId(v: string) {
@@ -98,6 +100,8 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
   const customer_address = asTrimmedString(p.customer_address);
   const payment_reference = asTrimmedString(p.payment_reference);
   const payment_method = asTrimmedString(p.payment_method);
+  const payment_payer_name = asTrimmedString(p.payment_payer_name);
+  const payment_proof_url = asTrimmedString(p.payment_proof_url);
   const subtotal = asInt(p.subtotal);
   const shipping = asInt(p.shipping);
   const total = asInt(p.total);
@@ -111,6 +115,17 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
   }
   if (!payment_reference || payment_reference.length < 8 || payment_reference.length > 64) {
     return { ok: false, error: "Invalid payment reference" };
+  }
+
+  // Optional but recommended fields for manual verification
+  if (payment_payer_name && payment_payer_name.length > 120) {
+    return { ok: false, error: "Invalid payer name" };
+  }
+  if (payment_proof_url && payment_proof_url.length > 2048) {
+    return { ok: false, error: "Invalid payment proof URL" };
+  }
+  if (payment_proof_url && !/^https?:\/\//i.test(payment_proof_url)) {
+    return { ok: false, error: "Invalid payment proof URL" };
   }
   if (payment_method !== "UPI") return { ok: false, error: "Invalid payment method" };
   if (subtotal === null || subtotal < 0 || subtotal > 100_000_000) {
@@ -159,6 +174,8 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
       total,
       payment_method: "UPI",
       payment_reference,
+      payment_payer_name: payment_payer_name ?? undefined,
+      payment_proof_url: payment_proof_url ?? undefined,
     },
   };
 }
@@ -224,6 +241,8 @@ Deno.serve(async (req) => {
       payment_status: "pending",
       // Stored in existing column used by the UI as UPI reference.
       razorpay_payment_id: order.payment_reference,
+      payment_payer_name: order.payment_payer_name ?? null,
+      payment_proof_url: order.payment_proof_url ?? null,
     });
 
     if (error) {

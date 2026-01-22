@@ -33,6 +33,8 @@ interface Order {
   payment_method: string;
   payment_status: 'pending' | 'verified' | 'failed';
   razorpay_payment_id: string | null;
+  payment_payer_name?: string | null;
+  payment_proof_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -329,6 +331,32 @@ export const OrdersPanel = () => {
                     <p className="font-mono text-sm bg-muted/50 px-2 py-1 rounded">
                       {order.razorpay_payment_id || 'Not provided'}
                     </p>
+                  </div>
+
+                  {/* Payment proof */}
+                  <div className="grid gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground">PAYMENT PROOF</p>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <div className="rounded-md border border-border bg-muted/30 p-2">
+                        <p className="text-[11px] text-muted-foreground">Payer name</p>
+                        <p className="text-sm">{(order.payment_payer_name ?? '').trim() || 'Not provided'}</p>
+                      </div>
+                      <div className="rounded-md border border-border bg-muted/30 p-2">
+                        <p className="text-[11px] text-muted-foreground">Screenshot</p>
+                        {order.payment_proof_url ? (
+                          <a
+                            href={order.payment_proof_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm underline"
+                          >
+                            View screenshot
+                          </a>
+                        ) : (
+                          <p className="text-sm">Not provided</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Payment Summary */}

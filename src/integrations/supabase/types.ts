@@ -24,6 +24,8 @@ export type Database = {
           items: Json
           order_id: string
           payment_method: string
+          payment_payer_name: string | null
+          payment_proof_url: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
@@ -41,6 +43,8 @@ export type Database = {
           items: Json
           order_id: string
           payment_method: string
+          payment_payer_name?: string | null
+          payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -58,6 +62,8 @@ export type Database = {
           items?: Json
           order_id?: string
           payment_method?: string
+          payment_payer_name?: string | null
+          payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null

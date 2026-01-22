@@ -17,6 +17,8 @@ const Checkout = () => {
   const { items, getTotal, clearCart } = useCartStore();
   const { addNotification, upsertCustomerOrder } = useNotificationStore();
   const [upiRefNumber, setUpiRefNumber] = useState('');
+  const [paymentPayerName, setPaymentPayerName] = useState('');
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -107,6 +109,20 @@ const Checkout = () => {
     } else if (upiRefNumber.trim().length < 8) {
       newErrors.upiRef = 'Enter a valid UPI transaction reference';
     }
+
+    if (!paymentPayerName.trim()) {
+      newErrors.payerName = 'Payer name is required';
+    } else if (paymentPayerName.trim().length > 120) {
+      newErrors.payerName = 'Payer name is too long';
+    }
+
+    if (!paymentProof) {
+      newErrors.paymentProof = 'Payment screenshot is required';
+    } else if (!paymentProof.type.startsWith('image/')) {
+      newErrors.paymentProof = 'Please upload an image file';
+    } else if (paymentProof.size > 2 * 1024 * 1024) {
+      newErrors.paymentProof = 'Image must be less than 2MB';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -129,6 +145,24 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
+      // Upload payment proof image (store only URL in database)
+      let paymentProofUrl = '';
+      if (paymentProof) {
+        const ext = paymentProof.name.split('.').pop() || 'jpg';
+        const random = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+          ? (crypto as any).randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const path = `payments/${Date.now()}-${random}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(path, paymentProof, { contentType: paymentProof.type, upsert: false });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path);
+        paymentProofUrl = urlData.publicUrl;
+      }
+
       // Prepare order items for database
       const orderItems = items.map(item => ({
         product_id: item.product.id,
@@ -150,6 +184,8 @@ const Checkout = () => {
           total: Math.round(finalTotal),
           payment_method: 'UPI',
           payment_reference: upiRefNumber.trim(),
+          payment_payer_name: paymentPayerName.trim(),
+          payment_proof_url: paymentProofUrl,
         },
       });
       if (error) throw error;
@@ -388,6 +424,46 @@ const Checkout = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 You can find this in your UPI app's transaction history
               </p>
+            </div>
+
+            {/* Payer name */}
+            <div>
+              <input
+                type="text"
+                value={paymentPayerName}
+                onChange={(e) => {
+                  setPaymentPayerName(e.target.value);
+                  if (errors.payerName) setErrors((p) => ({ ...p, payerName: '' }));
+                }}
+                placeholder="Payer name (name shown in UPI app)"
+                className={`input-field ${errors.payerName ? 'border-destructive' : ''}`}
+              />
+              {errors.payerName && (
+                <p className="text-xs text-destructive mt-1">{errors.payerName}</p>
+              )}
+            </div>
+
+            {/* Payment screenshot upload */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Upload payment screenshot</p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setPaymentProof(f);
+                  if (errors.paymentProof) setErrors((p) => ({ ...p, paymentProof: '' }));
+                }}
+                className={`input-field py-2 ${errors.paymentProof ? 'border-destructive' : ''}`}
+              />
+              {errors.paymentProof && (
+                <p className="text-xs text-destructive mt-1">{errors.paymentProof}</p>
+              )}
+              {paymentProof && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selected: <span className="font-mono">{paymentProof.name}</span>
+                </p>
+              )}
             </div>
           </div>
         </section>
