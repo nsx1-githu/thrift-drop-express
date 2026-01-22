@@ -173,6 +173,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      track_order: {
+        Args: { _customer_phone: string; _order_id: string }
+        Returns: {
+          created_at: string
+          customer_address: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          items: Json
+          order_id: string
+          payment_method: string
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          shipping: number
+          subtotal: number
+          total: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"

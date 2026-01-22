@@ -51,17 +51,17 @@ const TrackOrder = () => {
     setSearched(true);
 
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('order_id', orderId.trim().toUpperCase())
-        .eq('customer_phone', phone.trim())
-        .maybeSingle();
+      const { data, error } = await (supabase as any)
+        .rpc('track_order', {
+          _order_id: orderId.trim().toUpperCase(),
+          _customer_phone: phone.trim(),
+        });
 
       if (error) throw error;
-      
-      if (data) {
-        setOrder(data as unknown as Order);
+
+      const row = Array.isArray(data) ? data[0] : null;
+      if (row) {
+        setOrder(row as unknown as Order);
       } else {
         setOrder(null);
         toast.error('Order not found. Please check your details.');
