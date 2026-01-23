@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -35,6 +37,10 @@ interface Order {
   razorpay_payment_id: string | null;
   payment_payer_name?: string | null;
   payment_proof_url?: string | null;
+  refund_status?: string;
+  refund_reference?: string | null;
+  refund_note?: string | null;
+  refunded_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -45,6 +51,7 @@ export const OrdersPanel = () => {
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [refundDrafts, setRefundDrafts] = useState<Record<string, { reference: string; note: string }>>({});
 
   const copyText = async (text: string, label: string) => {
     const value = (text ?? '').trim();
@@ -130,6 +137,25 @@ export const OrdersPanel = () => {
     }
   };
 
+  type RefundPatch = {
+    refund_status?: string;
+    refund_reference?: string | null;
+    refund_note?: string | null;
+    refunded_at?: string | null;
+  };
+
+  const updateRefund = async (orderId: string, patch: RefundPatch) => {
+    try {
+      const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
+      if (error) throw error;
+      toast.success("Refund updated");
+      fetchOrders();
+    } catch (e) {
+      console.error("Error updating refund:", e);
+      toast.error("Failed to update refund");
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesFilter = filter === 'all' || order.payment_status === filter;
     const matchesSearch = 
@@ -155,6 +181,17 @@ export const OrdersPanel = () => {
       case 'failed': return 'bg-status-failed/10 text-status-failed border-status-failed/20';
       default: return 'bg-muted text-muted-foreground';
     }
+  };
+
+  const getRefundBadge = (status?: string) => {
+    const s = (status ?? "none").toLowerCase();
+    if (s === "refunded") {
+      return "bg-status-verified/10 text-status-verified border-status-verified/20";
+    }
+    if (s === "requested") {
+      return "bg-status-pending/10 text-status-pending border-status-pending/20";
+    }
+    return "bg-muted/30 text-muted-foreground border-border";
   };
 
   const stats = {
@@ -233,7 +270,19 @@ export const OrdersPanel = () => {
             >
               {/* Order Header */}
               <button
-                onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                onClick={() => {
+                  const next = expandedOrder === order.id ? null : order.id;
+                  setExpandedOrder(next);
+                  if (next) {
+                    setRefundDrafts((prev) => ({
+                      ...prev,
+                      [order.id]: {
+                        reference: (order.refund_reference ?? "").trim(),
+                        note: (order.refund_note ?? "").trim(),
+                      },
+                    }));
+                  }
+                }}
                 className="w-full p-4 text-left"
               >
                 <div className="flex items-start justify-between gap-2">
@@ -243,6 +292,9 @@ export const OrdersPanel = () => {
                       <Badge className={`${getStatusColor(order.payment_status)} border`}>
                         {getStatusIcon(order.payment_status)}
                         <span className="ml-1 capitalize">{order.payment_status}</span>
+                      </Badge>
+                      <Badge className={`${getRefundBadge(order.refund_status)} border`}>
+                        <span className="capitalize">Refund: {(order.refund_status ?? "none")}</span>
                       </Badge>
                     </div>
                     <p className="text-sm">{order.customer_name}</p>
@@ -356,6 +408,101 @@ export const OrdersPanel = () => {
                           <p className="text-sm">Not provided</p>
                         )}
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Refund tracking */}
+                  <div className="grid gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground">REFUND</p>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <div className="rounded-md border border-border bg-muted/30 p-2">
+                        <p className="text-[11px] text-muted-foreground">Status</p>
+                        <p className="text-sm capitalize">{(order.refund_status ?? "none")}</p>
+                        {order.refunded_at && (
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Refunded at: {new Date(order.refunded_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="rounded-md border border-border bg-muted/30 p-2">
+                        <p className="text-[11px] text-muted-foreground">Reference (optional)</p>
+                        <Input
+                          value={refundDrafts[order.id]?.reference ?? ""}
+                          onChange={(e) =>
+                            setRefundDrafts((prev) => ({
+                              ...prev,
+                              [order.id]: {
+                                reference: e.target.value.slice(0, 80),
+                                note: prev[order.id]?.note ?? "",
+                              },
+                            }))
+                          }
+                          placeholder="UTR / Ref no"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-muted/30 p-2">
+                      <p className="text-[11px] text-muted-foreground">Note (optional)</p>
+                      <Textarea
+                        value={refundDrafts[order.id]?.note ?? ""}
+                        onChange={(e) =>
+                          setRefundDrafts((prev) => ({
+                            ...prev,
+                            [order.id]: {
+                              reference: prev[order.id]?.reference ?? "",
+                              note: e.target.value.slice(0, 500),
+                            },
+                          }))
+                        }
+                        placeholder="Why refunded / any details"
+                        className="mt-1 min-h-[80px]"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9"
+                        onClick={() =>
+                          updateRefund(order.id, {
+                            refund_status: "requested",
+                          })
+                        }
+                      >
+                        Mark requested
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-9"
+                        onClick={() => {
+                          const reference = (refundDrafts[order.id]?.reference ?? "").trim();
+                          const note = (refundDrafts[order.id]?.note ?? "").trim();
+                          updateRefund(order.id, {
+                            refund_status: "refunded",
+                            refunded_at: new Date().toISOString(),
+                            refund_reference: reference || null,
+                            refund_note: note || null,
+                          });
+                        }}
+                      >
+                        Mark refunded
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9"
+                        onClick={() =>
+                          updateRefund(order.id, {
+                            refund_status: "none",
+                            refunded_at: null,
+                            refund_reference: null,
+                            refund_note: null,
+                          })
+                        }
+                      >
+                        Clear refund
+                      </Button>
                     </div>
                   </div>
 

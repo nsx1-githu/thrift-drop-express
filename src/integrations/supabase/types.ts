@@ -29,6 +29,10 @@ export type Database = {
           payment_status: Database["public"]["Enums"]["payment_status"]
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
+          refund_note: string | null
+          refund_reference: string | null
+          refund_status: string
+          refunded_at: string | null
           shipping: number
           subtotal: number
           total: number
@@ -48,6 +52,10 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          refund_note?: string | null
+          refund_reference?: string | null
+          refund_status?: string
+          refunded_at?: string | null
           shipping?: number
           subtotal: number
           total: number
@@ -67,6 +75,10 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
+          refund_note?: string | null
+          refund_reference?: string | null
+          refund_status?: string
+          refunded_at?: string | null
           shipping?: number
           subtotal?: number
           total?: number

@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { products, categories, sizes, conditions } from '@/data/products';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category, Condition, Size } from '@/types/product';
+import { Constants } from "@/integrations/supabase/types";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 
 const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -11,6 +12,11 @@ const Products = () => {
   const [selectedConditions, setSelectedConditions] = useState<Condition[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [showFilters, setShowFilters] = useState(false);
+
+  const { data: products = [], isLoading } = useStorefrontProducts();
+
+  const sizes = Constants.public.Enums.product_size as unknown as Size[];
+  const conditions = Constants.public.Enums.product_condition as unknown as Condition[];
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
@@ -144,17 +150,21 @@ const Products = () => {
 
         {/* Results Count */}
         <p className="text-xs text-muted-foreground mt-4 mb-3">
-          {filteredProducts.length} products found
+          {isLoading ? 'Loading…' : `${filteredProducts.length} products found`}
         </p>
 
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-64 bg-card border border-border rounded-sm animate-pulse" />
+              ))
+            : filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
         </div>
 
-        {filteredProducts.length === 0 && (
+        {!isLoading && filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No products match your filters</p>
             <button 

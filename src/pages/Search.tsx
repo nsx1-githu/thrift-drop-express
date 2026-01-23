@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Search as SearchIcon, X } from 'lucide-react';
-import { products } from '@/data/products';
 import { ProductCard } from '@/components/ProductCard';
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 
 const Search = () => {
   const [query, setQuery] = useState('');
+
+  const { data: products = [], isLoading } = useStorefrontProducts();
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return [];
@@ -49,13 +51,19 @@ const Search = () => {
         {query.trim() ? (
           <>
             <p className="text-xs text-muted-foreground mb-4">
-              {searchResults.length} results for "{query}"
+              {isLoading ? 'Searching…' : `${searchResults.length} results for "${query}"`}
             </p>
             
-            {searchResults.length > 0 ? (
+            {!isLoading && searchResults.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {searchResults.map((product) => (
                   <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-64 bg-card border border-border rounded-sm animate-pulse" />
                 ))}
               </div>
             ) : (
