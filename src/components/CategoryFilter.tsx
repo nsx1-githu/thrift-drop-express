@@ -1,5 +1,5 @@
-import { categories } from '@/data/products';
 import { Category } from '@/types/product';
+import { Constants } from "@/integrations/supabase/types";
 
 interface CategoryFilterProps {
   selected: Category | 'all';
@@ -7,6 +7,15 @@ interface CategoryFilterProps {
 }
 
 export const CategoryFilter = ({ selected, onSelect }: CategoryFilterProps) => {
+  const categories = [
+    { id: "all", name: "All", icon: "🏷️" },
+    ...Constants.public.Enums.product_category.map((id) => ({
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1),
+      icon: "🛍️",
+    })),
+  ] as const;
+
   return (
     <div className="flex gap-2 overflow-x-auto hide-scrollbar py-2 -mx-4 px-4">
       {categories.map((cat) => (
@@ -24,3 +33,4 @@ export const CategoryFilter = ({ selected, onSelect }: CategoryFilterProps) => {
     </div>
   );
 };
+

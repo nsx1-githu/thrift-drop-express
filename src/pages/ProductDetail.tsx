@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ShoppingBag, Check } from 'lucide-react';
-import { products } from '@/data/products';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,7 +11,17 @@ const ProductDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { items, addItem } = useCartStore();
 
+  const { data: products = [], isLoading } = useStorefrontProducts();
+
   const product = products.find(p => p.id === id);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { products } from '@/data/products';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category } from '@/types/product';
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
+
+  const { data: products = [], isLoading } = useStorefrontProducts();
 
   const latestDrops = products
     .filter(p => !p.soldOut)
@@ -53,11 +55,19 @@ const Home = () => {
             View All
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          {latestDrops.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-64 bg-card border border-border rounded-sm animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {latestDrops.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Browse by Category */}
@@ -69,9 +79,13 @@ const Home = () => {
         />
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-4">
-          {filteredProducts.slice(0, 8).map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-64 bg-card border border-border rounded-sm animate-pulse" />
+              ))
+            : filteredProducts.slice(0, 8).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
         </div>
 
         {filteredProducts.length > 8 && (
@@ -108,3 +122,4 @@ const Home = () => {
 };
 
 export default Home;
+
