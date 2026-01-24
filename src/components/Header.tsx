@@ -1,164 +1,145 @@
-import { ShoppingBag, Search, Menu, Bell, Download } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Search, ShoppingBag, Bell, Menu, X, Download } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
-import { useState, useRef } from 'react';
-import { useStoreSettings } from '@/hooks/useStoreSettings';
-import { usePwaInstallAvailable } from '@/hooks/usePwaInstallAvailable';
+import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { usePwaInstallAvailable } from "@/hooks/usePwaInstallAvailable";
 
 const REQUIRED_TAPS = 5;
-const TAP_TIME_WINDOW = 2000; // 2 seconds
+const TAP_TIME_WINDOW = 2000;
 
 export const Header = () => {
   const navigate = useNavigate();
-  const itemCount = useCartStore((state) => state.getItemCount());
-  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const tapTimestamps = useRef<number[]>([]);
-  const { get } = useStoreSettings();
+  const itemCount = useCartStore((state) => state.getItemCount());
+  const unreadCount = useNotificationStore((state) => state.getUnreadCount());
   const canInstall = usePwaInstallAvailable();
 
-  const storeName = get('store_name', 'THRIFT DROPS');
-  const logoUrl = get('theme_logo_url', '');
+  const { get } = useStoreSettings();
+  const storeName = get("store_name", "THRIFT DROPS");
+  const logoUrl = get("theme_logo_url", "");
 
   const handleLogoTap = (e: React.MouseEvent) => {
     const now = Date.now();
-    
-    // Filter out old taps outside the time window
-    tapTimestamps.current = tapTimestamps.current.filter(
-      (timestamp) => now - timestamp < TAP_TIME_WINDOW
-    );
-    
-    // Add current tap
-    tapTimestamps.current.push(now);
-
-    // Check if we have enough taps
+    tapTimestamps.current = [...tapTimestamps.current.filter(t => now - t < TAP_TIME_WINDOW), now];
     if (tapTimestamps.current.length >= REQUIRED_TAPS) {
       e.preventDefault();
-      tapTimestamps.current = []; // Reset
+      tapTimestamps.current = [];
       navigate('/admin/login');
     }
   };
 
+  const navLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/products', label: 'Shop' },
+    { to: '/track-order', label: 'Track Order' },
+    ...(canInstall ? [{ to: '/install', label: 'Get App' }] : []),
+  ];
+
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container flex items-center justify-between h-14 px-4">
-        <Link to="/" className="flex items-center gap-2" onClick={handleLogoTap}>
+    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <div className="flex items-center justify-between h-16 px-5">
+        {/* Logo */}
+        <Link to="/" onClick={handleLogoTap} className="flex items-center gap-3">
           {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={`${storeName} logo`}
-              className="h-7 w-auto max-w-[140px] object-contain"
-              loading="eager"
-            />
+            <img src={logoUrl} alt={storeName} className="h-8 w-auto object-contain" />
           ) : (
-            <>
-              <span className="text-xl font-bold tracking-tight text-cream">{storeName.split(' ')[0] || 'THRIFT'}</span>
-              <span className="text-xs font-mono text-muted-foreground">{storeName.split(' ').slice(1).join(' ') || 'DROPS'}</span>
-            </>
+            <span className="text-lg font-semibold tracking-tight text-foreground">
+              {storeName}
+            </span>
           )}
         </Link>
 
-        <div className="flex items-center gap-2">
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`text-sm font-medium transition-colors ${
+                location.pathname === link.to 
+                  ? 'text-primary' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1">
           {canInstall && (
             <Link
               to="/install"
-              className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-sm hover:bg-secondary transition-colors text-sm font-medium"
-              aria-label="Install app"
+              className="hidden md:flex p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
             >
-              <Download className="w-4 h-4 text-muted-foreground" />
-              <span>Install</span>
+              <Download className="w-5 h-5" />
             </Link>
           )}
-
-          <Link 
-            to="/search" 
-            className="p-2 rounded-sm hover:bg-secondary transition-colors"
-            aria-label="Search"
+          
+          <Link
+            to="/search"
+            className="p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
           >
-            <Search className="w-5 h-5 text-muted-foreground" />
+            <Search className="w-5 h-5" />
           </Link>
 
-          <Link 
-            to="/notifications" 
-            className="relative p-2 rounded-sm hover:bg-secondary transition-colors"
-            aria-label="Notifications"
+          <Link
+            to="/notifications"
+            className="relative p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
           >
-            <Bell className="w-5 h-5 text-muted-foreground" />
+            <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center text-[10px] font-bold bg-destructive text-destructive-foreground rounded-full">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
             )}
           </Link>
 
-          <Link 
-            to="/cart" 
-            className="relative p-2 rounded-sm hover:bg-secondary transition-colors"
-            aria-label="Cart"
+          <Link
+            to="/cart"
+            className="relative p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
           >
-            <ShoppingBag className="w-5 h-5 text-muted-foreground" />
+            <ShoppingBag className="w-5 h-5" />
             {itemCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
                 {itemCount}
               </span>
             )}
           </Link>
 
-          <button 
+          {/* Mobile Menu Toggle */}
+          <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-sm hover:bg-secondary transition-colors md:hidden"
-            aria-label="Menu"
+            className="md:hidden p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground"
           >
-            <Menu className="w-5 h-5 text-muted-foreground" />
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <nav className="md:hidden border-t border-border bg-background animate-fade-in">
-          <div className="container px-4 py-3 space-y-2">
-            {canInstall && (
+        <div className="md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border animate-fade-in">
+          <nav className="flex flex-col p-4 gap-1">
+            {navLinks.map((link) => (
               <Link
-                to="/install"
-                className="flex items-center gap-2 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+                key={link.to}
+                to={link.to}
                 onClick={() => setMenuOpen(false)}
+                className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  location.pathname === link.to
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-foreground hover:bg-muted/50'
+                }`}
               >
-                <Download className="w-4 h-4" />
-                Install App
+                {link.label}
               </Link>
-            )}
-            <Link 
-              to="/" 
-              className="block py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link 
-              to="/products" 
-              className="block py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
-              All Products
-            </Link>
-            <Link 
-              to="/track-order" 
-              className="block py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
-              Track Order
-            </Link>
-            <Link 
-              to="/cart" 
-              className="block py-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
-              Cart ({itemCount})
-            </Link>
-          </div>
-        </nav>
+            ))}
+          </nav>
+        </div>
       )}
     </header>
   );

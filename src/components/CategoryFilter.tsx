@@ -8,29 +8,26 @@ interface CategoryFilterProps {
 
 export const CategoryFilter = ({ selected, onSelect }: CategoryFilterProps) => {
   const categories = [
-    { id: "all", name: "All", icon: "🏷️" },
+    { id: "all", name: "All" },
     ...Constants.public.Enums.product_category.map((id) => ({
       id,
       name: id.charAt(0).toUpperCase() + id.slice(1),
-      icon: "🛍️",
     })),
   ] as const;
 
   return (
-    <div className="flex gap-2 overflow-x-auto hide-scrollbar py-2 -mx-4 px-4">
+    <div className="flex gap-2.5 overflow-x-auto hide-scrollbar py-2 -mx-6 px-6">
       {categories.map((cat) => (
         <button
           key={cat.id}
           onClick={() => onSelect(cat.id as Category | 'all')}
-          className={`category-chip flex-shrink-0 flex items-center gap-1.5 ${
+          className={`category-chip flex-shrink-0 ${
             selected === cat.id ? 'active' : ''
           }`}
         >
-          <span>{cat.icon}</span>
-          <span>{cat.name}</span>
+          {cat.name}
         </button>
       ))}
     </div>
   );
 };
-
