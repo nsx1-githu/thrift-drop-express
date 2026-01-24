@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Truck, CreditCard } from 'lucide-react';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category } from '@/types/product';
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
+import { PageTransition, StaggerWrapper, StaggerItem, MotionButton } from '@/components/ui/motion';
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -21,36 +23,67 @@ const Home = () => {
     : products.filter(p => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen pb-28">
+    <PageTransition className="min-h-screen pb-28">
       {/* Hero Section */}
       <section className="relative px-6 pt-8 pb-12 md:pt-16 md:pb-20">
         <div className="max-w-xl">
-          <p className="section-title mb-4 animate-fade-in">Curated Collection</p>
-          <h1 className="heading-xl mb-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <motion.p 
+            className="section-title mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            Curated Collection
+          </motion.p>
+          <motion.h1 
+            className="heading-xl mb-5"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
             Rare Finds.
             <br />
             <span className="text-muted-foreground">Timeless Style.</span>
-          </h1>
-          <p className="text-base text-muted-foreground mb-8 leading-relaxed max-w-md animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Every piece in our collection is unique. Curated vintage and premium streetwear, authenticated and ready to ship.
-          </p>
-          <Link 
-            to="/products" 
-            className="btn-primary inline-flex items-center gap-3 animate-fade-in"
-            style={{ animationDelay: '0.3s' }}
+          </motion.h1>
+          <motion.p 
+            className="text-base text-muted-foreground mb-8 leading-relaxed max-w-md"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
           >
-            Explore Collection
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+            Every piece in our collection is unique. Curated vintage and premium streetwear, authenticated and ready to ship.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+          >
+            <Link to="/products">
+              <MotionButton className="btn-primary inline-flex items-center gap-3">
+                Explore Collection
+                <ArrowRight className="w-4 h-4" />
+              </MotionButton>
+            </Link>
+          </motion.div>
         </div>
 
         {/* Floating Accent */}
-        <div className="absolute top-1/2 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
+        <motion.div 
+          className="absolute top-1/2 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.5 }}
+        />
       </section>
 
       {/* Latest Drops */}
       <section className="px-6 py-8">
-        <div className="flex items-end justify-between mb-6">
+        <motion.div 
+          className="flex items-end justify-between mb-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           <div>
             <p className="section-title mb-2">Just Dropped</p>
             <h2 className="heading-md">New Arrivals</h2>
@@ -59,7 +92,7 @@ const Home = () => {
             View All
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
-        </div>
+        </motion.div>
         
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
@@ -68,77 +101,99 @@ const Home = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            {latestDrops.map((product, index) => (
-              <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+          <StaggerWrapper className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            {latestDrops.map((product) => (
+              <StaggerItem key={product.id}>
                 <ProductCard product={product} />
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerWrapper>
         )}
       </section>
 
       {/* Browse by Category */}
       <section className="px-6 py-8">
-        <p className="section-title mb-2">Browse</p>
-        <h2 className="heading-md mb-5">Shop by Category</h2>
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <p className="section-title mb-2">Browse</p>
+          <h2 className="heading-md mb-5">Shop by Category</h2>
+        </motion.div>
         
         <CategoryFilter 
           selected={selectedCategory} 
           onSelect={setSelectedCategory} 
         />
         
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-6">
+        <StaggerWrapper className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mt-6">
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="skeleton-luxury aspect-[3/4]" />
               ))
-            : filteredProducts.slice(0, 8).map((product, index) => (
-                <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05}s` }}>
+            : filteredProducts.slice(0, 8).map((product) => (
+                <StaggerItem key={product.id}>
                   <ProductCard product={product} />
-                </div>
+                </StaggerItem>
               ))}
-        </div>
+        </StaggerWrapper>
 
         {filteredProducts.length > 8 && (
-          <div className="mt-8 text-center">
-            <Link to="/products" className="btn-secondary inline-flex items-center gap-2">
-              View More
-              <ArrowRight className="w-4 h-4" />
+          <motion.div 
+            className="mt-8 text-center"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <Link to="/products">
+              <MotionButton className="btn-secondary inline-flex items-center gap-2">
+                View More
+                <ArrowRight className="w-4 h-4" />
+              </MotionButton>
             </Link>
-          </div>
+          </motion.div>
         )}
       </section>
 
       {/* Trust Banner */}
       <section className="px-6 py-10">
-        <div className="section-floating p-8">
+        <motion.div 
+          className="section-floating p-8"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="grid grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-lg font-semibold text-foreground">100%</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Authentic</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Truck className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-lg font-semibold text-foreground">24hr</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Dispatch</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-lg font-semibold text-foreground">UPI</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Secure</p>
-            </div>
+            {[
+              { icon: Shield, value: '100%', label: 'Authentic' },
+              { icon: Truck, value: '24hr', label: 'Dispatch' },
+              { icon: CreditCard, value: 'UPI', label: 'Secure' }
+            ].map((item, index) => (
+              <motion.div 
+                key={item.label}
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <motion.div 
+                  className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-primary/10 flex items-center justify-center"
+                  whileHover={{ scale: 1.1, backgroundColor: 'hsl(var(--primary) / 0.2)' }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <item.icon className="w-5 h-5 text-primary" />
+                </motion.div>
+                <p className="text-lg font-semibold text-foreground">{item.value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{item.label}</p>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
       </section>
-    </div>
+    </PageTransition>
   );
 };
 

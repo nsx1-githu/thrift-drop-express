@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ShoppingBag, Check, Shield, Truck } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
+import { PageTransition, MotionButton } from '@/components/ui/motion';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,21 +19,25 @@ const ProductDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <motion.div 
+          className="w-12 h-12 border-2 border-primary/20 border-t-primary rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        />
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6">
+      <PageTransition className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center">
           <p className="text-muted-foreground mb-6">Product not found</p>
-          <button onClick={() => navigate('/products')} className="btn-secondary">
+          <MotionButton onClick={() => navigate('/products')} className="btn-secondary">
             Back to Shop
-          </button>
+          </MotionButton>
         </div>
-      </div>
+      </PageTransition>
     );
   }
 
@@ -66,14 +72,21 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="min-h-screen pb-32">
+    <PageTransition className="min-h-screen pb-32">
       {/* Image Gallery */}
       <div className="relative aspect-[4/5] bg-card overflow-hidden">
-        <img 
-          src={product.images[currentImageIndex]} 
-          alt={product.name}
-          className="w-full h-full object-cover"
-        />
+        <AnimatePresence mode="wait">
+          <motion.img 
+            key={currentImageIndex}
+            src={product.images[currentImageIndex]} 
+            alt={product.name}
+            className="w-full h-full object-cover"
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          />
+        </AnimatePresence>
         
         {product.soldOut && (
           <div className="sold-out-overlay">
@@ -83,30 +96,38 @@ const ProductDetail = () => {
 
         {product.images.length > 1 && (
           <>
-            <button 
+            <motion.button 
               onClick={prevImage}
               className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
               <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button 
+            </motion.button>
+            <motion.button 
               onClick={nextImage}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
               <ChevronRight className="w-5 h-5" />
-            </button>
+            </motion.button>
             
             {/* Image Dots */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               {product.images.map((_, index) => (
-                <button
+                <motion.button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  className={`h-2 rounded-full transition-colors ${
                     index === currentImageIndex 
-                      ? 'bg-primary w-6' 
+                      ? 'bg-primary' 
                       : 'bg-foreground/30 hover:bg-foreground/50'
                   }`}
+                  animate={{ 
+                    width: index === currentImageIndex ? 24 : 8 
+                  }}
+                  transition={{ duration: 0.2 }}
                 />
               ))}
             </div>
@@ -114,103 +135,167 @@ const ProductDetail = () => {
         )}
 
         {/* Back Button */}
-        <button 
+        <motion.button 
           onClick={() => navigate(-1)}
           className="absolute top-4 left-4 p-3 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
           <ChevronLeft className="w-5 h-5" />
-        </button>
+        </motion.button>
 
         {/* Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
           {!product.soldOut && discount > 0 && (
-            <span className="px-4 py-1.5 text-sm font-semibold bg-accent text-accent-foreground rounded-full">
+            <motion.span 
+              className="px-4 py-1.5 text-sm font-semibold bg-accent text-accent-foreground rounded-full"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               -{discount}%
-            </span>
+            </motion.span>
           )}
-          <span className={`badge-condition ${product.condition}`}>
+          <motion.span 
+            className={`badge-condition ${product.condition}`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             {product.condition}
-          </span>
+          </motion.span>
         </div>
 
         {/* One of One */}
-        <div className="absolute bottom-4 left-4">
+        <motion.div 
+          className="absolute bottom-4 left-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
           <span className="badge-rare">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <motion.span 
+              className="w-1.5 h-1.5 rounded-full bg-primary"
+              animate={{ opacity: [1, 0.4, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
             One of One
           </span>
-        </div>
+        </motion.div>
       </div>
 
       {/* Product Info */}
       <div className="px-6 py-6">
-        <p className="section-title mb-2">{product.brand}</p>
-        <h1 className="heading-lg mb-4">{product.name}</h1>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <p className="section-title mb-2">{product.brand}</p>
+          <h1 className="heading-lg mb-4">{product.name}</h1>
+        </motion.div>
 
         {/* Price */}
-        <div className="flex items-baseline gap-3 mb-6">
+        <motion.div 
+          className="flex items-baseline gap-3 mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
           <span className="price-tag-lg">₹{product.price.toLocaleString()}</span>
           {product.originalPrice && (
             <span className="text-base text-muted-foreground line-through">
               ₹{product.originalPrice.toLocaleString()}
             </span>
           )}
-        </div>
+        </motion.div>
 
         {/* Quick Info Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="p-4 section-floating">
+        <motion.div 
+          className="grid grid-cols-2 gap-3 mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <motion.div 
+            className="p-4 section-floating"
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2 }}
+          >
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Size</p>
             <p className="text-lg font-semibold">{product.size}</p>
-          </div>
-          <div className="p-4 section-floating">
+          </motion.div>
+          <motion.div 
+            className="p-4 section-floating"
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2 }}
+          >
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Category</p>
             <p className="text-lg font-semibold capitalize">{product.category}</p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Description */}
         {product.description && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Details</p>
             <p className="text-base text-foreground/80 leading-relaxed">
               {product.description}
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* Trust Indicators */}
-        <div className="section-floating p-5">
+        <motion.div 
+          className="section-floating p-5"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Authenticated</p>
-                <p className="text-xs text-muted-foreground">Quality checked</p>
-              </div>
-            </div>
-            <div className="w-px h-10 bg-border" />
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Truck className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Free Shipping</p>
-                <p className="text-xs text-muted-foreground">Orders ₹999+</p>
-              </div>
-            </div>
+            {[
+              { icon: Shield, title: 'Authenticated', subtitle: 'Quality checked' },
+              { icon: Truck, title: 'Free Shipping', subtitle: 'Orders ₹999+' }
+            ].map((item, index) => (
+              <motion.div 
+                key={item.title}
+                className="flex items-center gap-3 flex-1"
+                whileHover={{ x: 4 }}
+                transition={{ duration: 0.2 }}
+              >
+                <motion.div 
+                  className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"
+                  whileHover={{ scale: 1.1, backgroundColor: 'hsl(var(--primary) / 0.2)' }}
+                >
+                  <item.icon className="w-4 h-4 text-primary" />
+                </motion.div>
+                <div>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                </div>
+                {index === 0 && <div className="w-px h-10 bg-border ml-auto" />}
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Fixed Bottom CTA */}
-      <div className="fixed bottom-20 md:bottom-0 left-0 right-0 p-5 bg-background/80 backdrop-blur-xl border-t border-border/50">
-        <button 
+      <motion.div 
+        className="fixed bottom-20 md:bottom-0 left-0 right-0 p-5 bg-background/80 backdrop-blur-xl border-t border-border/50"
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        transition={{ delay: 0.4, type: 'spring', stiffness: 100, damping: 20 }}
+      >
+        <MotionButton 
           onClick={handleAddToCart}
           disabled={product.soldOut}
-          className={`w-full flex items-center justify-center gap-3 py-4 rounded-full font-semibold text-base transition-all ${
+          className={`w-full flex items-center justify-center gap-3 py-4 rounded-full font-semibold text-base transition-colors ${
             product.soldOut 
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
               : isInCart
@@ -231,9 +316,9 @@ const ProductDetail = () => {
               Add to Cart — ₹{product.price.toLocaleString()}
             </>
           )}
-        </button>
-      </div>
-    </div>
+        </MotionButton>
+      </motion.div>
+    </PageTransition>
   );
 };
 
