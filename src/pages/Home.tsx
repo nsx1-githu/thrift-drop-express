@@ -25,10 +25,10 @@ const Home = () => {
   return (
     <PageTransition className="min-h-screen pb-28">
       {/* Hero Section */}
-      <section className="relative px-6 pt-8 pb-12 md:pt-16 md:pb-20">
-        <div className="max-w-xl">
+      <section className="relative px-6 pt-8 pb-12 md:pt-16 md:pb-20 overflow-hidden">
+        <div className="max-w-xl relative z-10">
           <motion.p 
-            className="section-title mb-4"
+            className="section-title mb-4 text-primary"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
@@ -41,7 +41,7 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Rare Finds.
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">Rare Finds.</span>
             <br />
             <span className="text-muted-foreground">Timeless Style.</span>
           </motion.h1>
@@ -59,7 +59,7 @@ const Home = () => {
             transition={{ duration: 0.4, delay: 0.3 }}
           >
             <Link to="/products">
-              <MotionButton className="btn-primary inline-flex items-center gap-3">
+              <MotionButton className="btn-primary inline-flex items-center gap-3 bg-gradient-to-r from-primary to-accent hover:shadow-glow">
                 Explore Collection
                 <ArrowRight className="w-4 h-4" />
               </MotionButton>
@@ -67,12 +67,18 @@ const Home = () => {
           </motion.div>
         </div>
 
-        {/* Floating Accent */}
+        {/* Colorful Floating Accents */}
         <motion.div 
-          className="absolute top-1/2 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"
+          className="absolute top-1/4 right-0 w-72 h-72 bg-gradient-to-br from-primary/20 to-accent/10 rounded-full blur-3xl -z-10"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.5 }}
+        />
+        <motion.div 
+          className="absolute bottom-0 left-1/4 w-48 h-48 bg-violet/10 rounded-full blur-3xl -z-10"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.6, scale: 1 }}
+          transition={{ duration: 1.2, delay: 0.7 }}
         />
       </section>
 

@@ -6,36 +6,36 @@
 
 @layer base {
   :root {
-    /* Luxury Dark Theme - Deep Charcoal with Champagne Gold */
-    --background: 220 10% 6%;
-    --foreground: 40 15% 92%;
+    /* Luxury Dark Theme - Rich & Vibrant */
+    --background: 240 15% 5%;
+    --foreground: 45 20% 95%;
 
-    --card: 220 10% 9%;
-    --card-foreground: 40 15% 92%;
+    --card: 240 12% 8%;
+    --card-foreground: 45 20% 95%;
 
-    --popover: 220 10% 10%;
-    --popover-foreground: 40 15% 92%;
+    --popover: 240 12% 10%;
+    --popover-foreground: 45 20% 95%;
 
-    /* Champagne Gold Primary */
-    --primary: 38 40% 72%;
-    --primary-foreground: 220 10% 6%;
+    /* Rose Gold Primary */
+    --primary: 15 70% 65%;
+    --primary-foreground: 240 15% 5%;
 
-    --secondary: 220 8% 14%;
-    --secondary-foreground: 40 12% 80%;
+    --secondary: 260 20% 15%;
+    --secondary-foreground: 280 30% 85%;
 
-    --muted: 220 8% 16%;
-    --muted-foreground: 220 8% 55%;
+    --muted: 250 15% 18%;
+    --muted-foreground: 250 10% 55%;
 
-    /* Warm Gold Accent */
-    --accent: 35 55% 58%;
-    --accent-foreground: 220 10% 6%;
+    /* Warm Amber Accent */
+    --accent: 35 85% 55%;
+    --accent-foreground: 240 15% 5%;
 
-    --destructive: 0 55% 50%;
-    --destructive-foreground: 40 15% 95%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 45 20% 95%;
 
-    --border: 220 8% 15%;
-    --input: 220 10% 12%;
-    --ring: 38 40% 72%;
+    --border: 260 15% 18%;
+    --input: 250 12% 12%;
+    --ring: 15 70% 65%;
 
     /* Premium Radius - Soft & Rounded */
     --radius: 1rem;
@@ -44,49 +44,58 @@
     --radius-xl: 2rem;
     --radius-full: 9999px;
 
-    --success: 155 50% 45%;
-    --success-foreground: 40 15% 95%;
+    /* Vibrant Success - Emerald */
+    --success: 160 65% 45%;
+    --success-foreground: 45 20% 95%;
 
-    --warning: 42 80% 55%;
-    --warning-foreground: 220 10% 6%;
+    /* Warm Warning - Amber */
+    --warning: 38 90% 55%;
+    --warning-foreground: 240 15% 5%;
 
     /* Status colors */
-    --status-pending: 42 80% 55%;
-    --status-pending-foreground: 220 10% 6%;
-    --status-verified: 155 50% 45%;
-    --status-verified-foreground: 40 15% 95%;
-    --status-failed: 0 55% 55%;
-    --status-failed-foreground: 40 15% 95%;
+    --status-pending: 38 90% 55%;
+    --status-pending-foreground: 240 15% 5%;
+    --status-verified: 160 65% 45%;
+    --status-verified-foreground: 45 20% 95%;
+    --status-failed: 0 65% 55%;
+    --status-failed-foreground: 45 20% 95%;
 
-    --sidebar-background: 220 10% 8%;
-    --sidebar-foreground: 40 12% 85%;
-    --sidebar-primary: 38 40% 72%;
-    --sidebar-primary-foreground: 220 10% 6%;
-    --sidebar-accent: 220 8% 14%;
-    --sidebar-accent-foreground: 40 12% 80%;
-    --sidebar-border: 220 8% 14%;
-    --sidebar-ring: 38 40% 72%;
+    --sidebar-background: 240 12% 7%;
+    --sidebar-foreground: 280 20% 85%;
+    --sidebar-primary: 15 70% 65%;
+    --sidebar-primary-foreground: 240 15% 5%;
+    --sidebar-accent: 260 20% 16%;
+    --sidebar-accent-foreground: 280 30% 85%;
+    --sidebar-border: 260 15% 16%;
+    --sidebar-ring: 15 70% 65%;
 
-    /* Luxury tokens */
-    --cream: 40 25% 90%;
-    --tan: 38 30% 70%;
-    --rust: 20 50% 45%;
-    --olive: 80 18% 35%;
-    --charcoal: 220 10% 10%;
-    --gold: 38 40% 72%;
+    /* Luxury Extended Palette */
+    --cream: 45 30% 92%;
+    --tan: 30 40% 70%;
+    --rust: 15 60% 50%;
+    --olive: 85 25% 40%;
+    --charcoal: 240 12% 10%;
+    --gold: 42 75% 55%;
+    --rose: 15 70% 65%;
+    --violet: 280 45% 55%;
+    --teal: 175 50% 45%;
+    --coral: 12 80% 62%;
     
     /* Premium Gradients */
-    --gradient-card: linear-gradient(165deg, hsl(220 10% 11%) 0%, hsl(220 10% 8%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 10% 6%) 0%, hsl(220 10% 9%) 100%);
-    --gradient-premium: linear-gradient(135deg, hsl(38 40% 72% / 0.15) 0%, transparent 50%);
-    --gradient-floating: linear-gradient(180deg, hsl(220 10% 10%) 0%, hsl(220 10% 8%) 100%);
+    --gradient-card: linear-gradient(165deg, hsl(260 15% 12%) 0%, hsl(240 15% 7%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(240 15% 5%) 0%, hsl(260 15% 10%) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(15 70% 65% / 0.15) 0%, hsl(280 45% 55% / 0.08) 50%, transparent 100%);
+    --gradient-floating: linear-gradient(180deg, hsl(260 12% 12%) 0%, hsl(240 12% 8%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(15 70% 65%) 0%, hsl(35 85% 55%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(15 70% 65% / 0.2) 0%, transparent 70%);
     
-    /* Luxury Shadows - Soft & Diffused */
-    --shadow-sm: 0 4px 12px -4px hsl(0 0% 0% / 0.25);
-    --shadow-md: 0 12px 32px -8px hsl(0 0% 0% / 0.35);
-    --shadow-lg: 0 24px 64px -16px hsl(0 0% 0% / 0.45);
-    --shadow-glow: 0 0 40px -10px hsl(38 40% 72% / 0.15);
-    --shadow-floating: 0 8px 40px -12px hsl(0 0% 0% / 0.5), 0 4px 16px -4px hsl(0 0% 0% / 0.3);
+    /* Luxury Shadows - Colorful & Diffused */
+    --shadow-sm: 0 4px 12px -4px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 12px 32px -8px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 24px 64px -16px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 40px -10px hsl(15 70% 65% / 0.25);
+    --shadow-glow-accent: 0 0 30px -8px hsl(35 85% 55% / 0.3);
+    --shadow-floating: 0 8px 40px -12px hsl(280 50% 20% / 0.4), 0 4px 16px -4px hsl(0 0% 0% / 0.35);
   }
 }
 
@@ -101,7 +110,7 @@
     letter-spacing: -0.01em;
   }
 
-  /* Subtle ambient glow overlay */
+  /* Rich ambient glow overlays */
   body::before {
     content: '';
     position: fixed;
@@ -110,9 +119,12 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    opacity: 0.4;
+    opacity: 0.5;
     z-index: -1;
-    background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(38 40% 72% / 0.04) 0%, transparent 60%);
+    background: 
+      radial-gradient(ellipse 60% 40% at 10% 0%, hsl(280 45% 55% / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 35% at 90% 10%, hsl(15 70% 65% / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(35 85% 55% / 0.04) 0%, transparent 60%);
   }
 }
 
@@ -230,9 +242,10 @@
   }
 
   .category-chip.active {
-    background: hsl(var(--primary));
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
     color: hsl(var(--primary-foreground));
     box-shadow: var(--shadow-glow);
+    border-color: transparent;
   }
 
   /* Condition Badges */
@@ -291,19 +304,20 @@
     box-shadow: 0 0 0 4px hsl(var(--primary) / 0.1);
   }
 
-  /* Premium Buttons - Pill Shaped */
+  /* Premium Buttons - Pill Shaped with Gradient */
   .btn-primary {
     @apply px-8 py-4 text-base font-semibold;
     border-radius: var(--radius-full);
-    background: hsl(var(--primary));
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
     color: hsl(var(--primary-foreground));
-    box-shadow: var(--shadow-sm), 0 0 24px -8px hsl(var(--primary) / 0.4);
+    box-shadow: var(--shadow-sm), 0 0 28px -8px hsl(var(--primary) / 0.5);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md), 0 0 32px -8px hsl(var(--primary) / 0.5);
+    box-shadow: var(--shadow-md), 0 0 40px -8px hsl(var(--primary) / 0.6);
+    filter: brightness(1.1);
   }
 
   .btn-primary:active {
@@ -387,13 +401,14 @@
     box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
   }
 
-  /* Archive/Rare Badge */
+  /* Archive/Rare Badge - Gradient Glow */
   .badge-rare {
     @apply inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium uppercase tracking-wider;
     border-radius: var(--radius-full);
-    background: hsl(var(--primary) / 0.1);
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.15) 0%, hsl(var(--violet) / 0.1) 100%);
     color: hsl(var(--primary));
-    border: 1px solid hsl(var(--primary) / 0.2);
+    border: 1px solid hsl(var(--primary) / 0.25);
+    box-shadow: 0 0 16px -4px hsl(var(--primary) / 0.2);
   }
 
   /* Skeleton Loading */
