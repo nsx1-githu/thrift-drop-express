@@ -358,6 +358,7 @@ export const OrdersPanel = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="1">1 day</SelectItem>
                     <SelectItem value="30">30 days</SelectItem>
                     <SelectItem value="60">60 days</SelectItem>
                     <SelectItem value="90">90 days</SelectItem>
