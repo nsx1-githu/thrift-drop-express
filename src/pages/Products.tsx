@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category, Condition, Size } from '@/types/product';
@@ -26,7 +26,7 @@ const Products = () => {
       if (product.price < priceRange[0] || product.price > priceRange[1]) return false;
       return true;
     });
-  }, [selectedCategory, selectedSizes, selectedConditions, priceRange]);
+  }, [products, selectedCategory, selectedSizes, selectedConditions, priceRange]);
 
   const toggleSize = (size: Size) => {
     setSelectedSizes(prev => 
@@ -54,13 +54,21 @@ const Products = () => {
     (priceRange[0] > 0 || priceRange[1] < 10000 ? 1 : 0);
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="section-title">All Products</h1>
+    <div className="min-h-screen pb-28">
+      <div className="px-6 py-6">
+        {/* Header */}
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <p className="section-title mb-2">Collection</p>
+            <h1 className="heading-md">All Products</h1>
+          </div>
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-secondary rounded-sm"
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-full transition-all ${
+              showFilters || activeFilterCount > 0
+                ? 'bg-primary/10 text-primary border border-primary/20'
+                : 'bg-secondary text-secondary-foreground border border-transparent'
+            }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
             Filters
@@ -69,6 +77,7 @@ const Products = () => {
                 {activeFilterCount}
               </span>
             )}
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
@@ -77,28 +86,29 @@ const Products = () => {
 
         {/* Expanded Filters */}
         {showFilters && (
-          <div className="mt-4 p-4 bg-card rounded-sm border border-border animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium">Filters</span>
+          <div className="mt-5 p-5 section-floating animate-fade-in">
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-sm font-medium text-foreground">Refine Selection</span>
               {activeFilterCount > 0 && (
                 <button 
                   onClick={clearFilters}
-                  className="text-xs text-accent hover:underline"
+                  className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
                 >
+                  <X className="w-3 h-3" />
                   Clear All
                 </button>
               )}
             </div>
 
             {/* Size Filter */}
-            <div className="mb-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Size</p>
+            <div className="mb-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Size</p>
               <div className="flex flex-wrap gap-2">
                 {sizes.map(size => (
                   <button
                     key={size}
                     onClick={() => toggleSize(size)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-sm border transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-full border transition-all ${
                       selectedSizes.includes(size)
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-secondary border-border hover:border-muted-foreground'
@@ -111,14 +121,14 @@ const Products = () => {
             </div>
 
             {/* Condition Filter */}
-            <div className="mb-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Condition</p>
+            <div className="mb-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Condition</p>
               <div className="flex flex-wrap gap-2">
                 {conditions.map(condition => (
                   <button
                     key={condition}
                     onClick={() => toggleCondition(condition)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-sm border capitalize transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium rounded-full border capitalize transition-all ${
                       selectedConditions.includes(condition)
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-secondary border-border hover:border-muted-foreground'
@@ -132,46 +142,52 @@ const Products = () => {
 
             {/* Price Range */}
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                Price: ₹{priceRange[0]} - ₹{priceRange[1]}
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">
+                Price Range
               </p>
-              <input
-                type="range"
-                min="0"
-                max="10000"
-                step="500"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                className="w-full accent-primary"
-              />
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium tabular-nums">₹{priceRange[0]}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="10000"
+                  step="500"
+                  value={priceRange[1]}
+                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                  className="flex-1 accent-primary h-1 rounded-full appearance-none bg-muted cursor-pointer"
+                />
+                <span className="text-sm font-medium tabular-nums">₹{priceRange[1]}</span>
+              </div>
             </div>
           </div>
         )}
 
         {/* Results Count */}
-        <p className="text-xs text-muted-foreground mt-4 mb-3">
-          {isLoading ? 'Loading…' : `${filteredProducts.length} products found`}
+        <p className="text-sm text-muted-foreground mt-6 mb-4">
+          {isLoading ? 'Loading collection…' : `${filteredProducts.length} pieces found`}
         </p>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-64 bg-card border border-border rounded-sm animate-pulse" />
+                <div key={i} className="skeleton-luxury aspect-[3/4]" />
               ))
-            : filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+            : filteredProducts.map((product, index) => (
+                <div key={product.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05}s` }}>
+                  <ProductCard product={product} />
+                </div>
               ))}
         </div>
 
         {!isLoading && filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No products match your filters</p>
+          <div className="text-center py-16">
+            <p className="text-muted-foreground mb-4">No products match your selection</p>
             <button 
               onClick={clearFilters}
-              className="mt-3 text-sm text-primary hover:underline"
+              className="btn-secondary"
             >
-              Clear filters
+              Clear Filters
             </button>
           </div>
         )}

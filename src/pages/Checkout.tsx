@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Copy, Check, QrCode, Loader2 } from 'lucide-react';
+import { ChevronLeft, Copy, Check, QrCode, Loader2, Shield, Upload } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +34,6 @@ const Checkout = () => {
   });
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
-  // Backend validation expects integer amounts.
   const total = Math.round(getTotal());
   const shippingFree = total >= 999;
   const shippingCost = shippingFree ? 0 : 79;
@@ -88,34 +87,27 @@ const Checkout = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^[6-9]\d{9}$/.test(formData.phone.trim())) {
       newErrors.phone = 'Enter a valid 10-digit phone number';
     }
-    
     if (!formData.address.trim()) {
       newErrors.address = 'Address is required';
     } else if (formData.address.trim().length < 20) {
       newErrors.address = 'Please enter a complete address';
     }
-
     if (!upiRefNumber.trim()) {
       newErrors.upiRef = 'UPI reference number is required';
     } else if (upiRefNumber.trim().length < 8) {
       newErrors.upiRef = 'Enter a valid UPI transaction reference';
     }
-
     if (!paymentPayerName.trim()) {
       newErrors.payerName = 'Payer name is required';
     } else if (paymentPayerName.trim().length > 120) {
       newErrors.payerName = 'Payer name is too long';
     }
-
     if (!paymentProof) {
       newErrors.paymentProof = 'Payment screenshot is required';
     } else if (!paymentProof.type.startsWith('image/')) {
@@ -131,9 +123,7 @@ const Checkout = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async () => {
@@ -145,7 +135,6 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Upload payment proof image (store only URL in database)
       let paymentProofUrl = '';
       if (paymentProof) {
         const ext = paymentProof.name.split('.').pop() || 'jpg';
@@ -163,7 +152,6 @@ const Checkout = () => {
         paymentProofUrl = urlData.publicUrl;
       }
 
-      // Prepare order items for database
       const orderItems = items.map(item => ({
         product_id: item.product.id,
         name: item.product.name,
@@ -172,7 +160,6 @@ const Checkout = () => {
         image: item.product.images[0],
       }));
 
-      // Create order via backend (prevents public direct INSERT access)
       const { data, error } = await supabase.functions.invoke('create-order', {
         body: {
           customer_name: formData.name.trim(),
@@ -190,13 +177,11 @@ const Checkout = () => {
       });
       if (error) throw error;
 
-      // Some backends may return a 200 with an error payload; handle defensively.
       const payloadError = (data as any)?.error as string | undefined;
       if (payloadError) throw new Error(payloadError);
       const orderId = (data as any)?.orderId as string | undefined;
       if (!orderId) throw new Error('Missing orderId');
 
-      // Add notification
       addNotification({
         title: 'Order Placed Successfully!',
         message: `Your order ${orderId} has been placed. Payment verification is pending.`,
@@ -204,14 +189,12 @@ const Checkout = () => {
         orderId,
       });
 
-      // Remember this order on the customer's device so we can notify on Accept/Reject later.
       upsertCustomerOrder({
         orderId,
         phone: formData.phone.trim(),
         status: 'pending',
       });
 
-      // Store order details for confirmation page
       sessionStorage.setItem('lastOrder', JSON.stringify({
         orderId,
         items,
@@ -234,58 +217,55 @@ const Checkout = () => {
     }
   };
 
-  // Generate UPI payment link for QR code (fallback if no custom QR uploaded)
   const upiPaymentLink = `upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.store_name)}&am=${finalTotal}&cu=INR`;
   const generatedQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentLink)}`;
-  
-  // Use custom QR if available, otherwise use generated one
   const qrCodeUrl = settings.upi_qr_image || generatedQrCodeUrl;
 
   return (
-    <div className="min-h-screen pb-32">
+    <div className="min-h-screen pb-40">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-1"
-          >
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center gap-4 px-5 h-16">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-xl hover:bg-muted/50 transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="font-semibold">Checkout</h1>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-widest">Secure</p>
+            <h1 className="font-semibold">Checkout</h1>
+          </div>
         </div>
       </div>
 
-      <div className="px-4 py-4 space-y-6">
+      <div className="px-6 py-6 space-y-8">
         {/* Order Summary */}
         <section>
-          <h2 className="text-sm font-semibold mb-3">Order Summary</h2>
-          <div className="space-y-2 p-4 bg-card rounded-sm border border-border">
+          <p className="section-title mb-3">Order Summary</p>
+          <div className="section-floating p-5 space-y-3">
             {items.map((item) => (
               <div key={item.product.id} className="flex justify-between text-sm">
-                <span className="text-muted-foreground line-clamp-1 flex-1 mr-2">
+                <span className="text-muted-foreground line-clamp-1 flex-1 mr-4">
                   {item.product.name}
                 </span>
-                <span>₹{item.product.price.toLocaleString()}</span>
+                <span className="font-medium tabular-nums">₹{item.product.price.toLocaleString()}</span>
               </div>
             ))}
-            <div className="flex justify-between text-sm pt-2 border-t border-border">
+            <div className="flex justify-between text-sm pt-3 border-t border-border">
               <span className="text-muted-foreground">Shipping</span>
-              <span className={shippingFree ? 'text-success' : ''}>
+              <span className={`font-medium ${shippingFree ? 'text-success' : ''}`}>
                 {shippingFree ? 'Free' : `₹${shippingCost}`}
               </span>
             </div>
-            <div className="flex justify-between font-semibold text-cream pt-2 border-t border-border">
-              <span>Total</span>
-              <span className="price-tag">₹{finalTotal.toLocaleString()}</span>
+            <div className="flex justify-between pt-3 border-t border-border">
+              <span className="font-medium">Total</span>
+              <span className="price-tag-lg">₹{finalTotal.toLocaleString()}</span>
             </div>
           </div>
         </section>
 
         {/* Delivery Details */}
         <section>
-          <h2 className="text-sm font-semibold mb-3">Delivery Details</h2>
-          <div className="space-y-3">
+          <p className="section-title mb-3">Delivery Details</p>
+          <div className="space-y-4">
             <div>
               <input
                 type="text"
@@ -293,11 +273,9 @@ const Checkout = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Full Name"
-                className={`input-field ${errors.name ? 'border-destructive' : ''}`}
+                className={`input-field ${errors.name ? 'border-destructive focus:border-destructive' : ''}`}
               />
-              {errors.name && (
-                <p className="text-xs text-destructive mt-1">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-xs text-destructive mt-2">{errors.name}</p>}
             </div>
             
             <div>
@@ -308,11 +286,9 @@ const Checkout = () => {
                 onChange={handleChange}
                 placeholder="Phone Number (10 digits)"
                 maxLength={10}
-                className={`input-field ${errors.phone ? 'border-destructive' : ''}`}
+                className={`input-field ${errors.phone ? 'border-destructive focus:border-destructive' : ''}`}
               />
-              {errors.phone && (
-                <p className="text-xs text-destructive mt-1">{errors.phone}</p>
-              )}
+              {errors.phone && <p className="text-xs text-destructive mt-2">{errors.phone}</p>}
             </div>
             
             <div>
@@ -322,30 +298,28 @@ const Checkout = () => {
                 onChange={handleChange}
                 placeholder="Complete Address (House/Flat, Street, City, State, Pincode)"
                 rows={3}
-                className={`input-field resize-none ${errors.address ? 'border-destructive' : ''}`}
+                className={`input-field resize-none ${errors.address ? 'border-destructive focus:border-destructive' : ''}`}
               />
-              {errors.address && (
-                <p className="text-xs text-destructive mt-1">{errors.address}</p>
-              )}
+              {errors.address && <p className="text-xs text-destructive mt-2">{errors.address}</p>}
             </div>
           </div>
         </section>
 
         {/* UPI Payment Section */}
         <section>
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <QrCode className="w-4 h-4" />
-            Pay via UPI
-          </h2>
+          <div className="flex items-center gap-2 mb-3">
+            <QrCode className="w-4 h-4 text-primary" />
+            <p className="section-title">Pay via UPI</p>
+          </div>
           
-          <div className="p-4 bg-card rounded-sm border border-border space-y-4">
-            {/* Amount to pay */}
-            <div className="text-center pb-3 border-b border-border">
-              <p className="text-sm text-muted-foreground">Amount to Pay</p>
-              <p className="text-2xl font-bold text-primary">₹{finalTotal.toLocaleString()}</p>
+          <div className="section-floating p-5 space-y-5">
+            {/* Amount Display */}
+            <div className="text-center py-4 border-b border-border">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Amount to Pay</p>
+              <p className="price-tag-lg">₹{finalTotal.toLocaleString()}</p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-2">
               {/* QR Code */}
               <div className="flex justify-center">
                 {isLoadingSettings ? (
@@ -356,138 +330,120 @@ const Checkout = () => {
                   <img
                     src={qrCodeUrl}
                     alt="UPI QR Code"
-                    className="w-48 h-48 rounded-lg bg-white p-2 object-contain"
+                    className="w-48 h-48 rounded-2xl bg-white p-3 object-contain"
                   />
                 )}
               </div>
 
-              {/* Screenshot + UPI details */}
-              <div className="space-y-3">
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
-                  <p className="text-xs text-muted-foreground">UPI Name</p>
-                  <p className="text-sm font-medium">{settings.store_name}</p>
+              {/* UPI Details */}
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/30 rounded-xl">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">UPI Name</p>
+                  <p className="font-medium">{settings.store_name}</p>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
                   <div>
-                    <p className="text-xs text-muted-foreground">UPI ID</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">UPI ID</p>
                     <p className="font-mono text-sm">{settings.upi_id}</p>
                   </div>
                   <button
                     onClick={copyUpiId}
-                    className="p-2 hover:bg-muted rounded-md transition-colors"
+                    className="p-3 rounded-xl bg-card hover:bg-muted transition-colors"
                   >
-                    {copied ? (
-                      <Check className="w-4 h-4 text-success" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
+                    {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                   </button>
-                </div>
-
-                <div className="rounded-lg border border-border bg-card p-3">
-                  <p className="text-xs text-muted-foreground mb-2">Screenshot example (for reference number)</p>
-                  <img
-                    src="/placeholder.svg"
-                    alt="Example payment screenshot showing UPI reference number"
-                    className="w-full max-h-40 object-contain rounded-md bg-background"
-                    loading="lazy"
-                  />
                 </div>
               </div>
             </div>
 
             {/* Instructions */}
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-sm text-muted-foreground space-y-1.5 p-4 bg-muted/20 rounded-xl">
               <p>1. Scan the QR code or copy UPI ID</p>
               <p>2. Pay ₹{finalTotal.toLocaleString()} using any UPI app</p>
               <p>3. Enter the transaction reference number below</p>
             </div>
 
-            {/* Transaction Reference Input */}
+            {/* Transaction Reference */}
             <div>
               <input
                 type="text"
                 value={upiRefNumber}
                 onChange={(e) => {
                   setUpiRefNumber(e.target.value);
-                  if (errors.upiRef) {
-                    setErrors(prev => ({ ...prev, upiRef: '' }));
-                  }
+                  if (errors.upiRef) setErrors(prev => ({ ...prev, upiRef: '' }));
                 }}
-                placeholder="Enter UPI Transaction Reference Number"
-                className={`input-field ${errors.upiRef ? 'border-destructive' : ''}`}
+                placeholder="UPI Transaction Reference Number"
+                className={`input-field ${errors.upiRef ? 'border-destructive focus:border-destructive' : ''}`}
               />
-              {errors.upiRef && (
-                <p className="text-xs text-destructive mt-1">{errors.upiRef}</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                You can find this in your UPI app's transaction history
-              </p>
+              {errors.upiRef && <p className="text-xs text-destructive mt-2">{errors.upiRef}</p>}
+              <p className="text-xs text-muted-foreground mt-2">Find this in your UPI app's transaction history</p>
             </div>
 
-            {/* Payer name */}
+            {/* Payer Name */}
             <div>
               <input
                 type="text"
                 value={paymentPayerName}
                 onChange={(e) => {
                   setPaymentPayerName(e.target.value);
-                  if (errors.payerName) setErrors((p) => ({ ...p, payerName: '' }));
+                  if (errors.payerName) setErrors(prev => ({ ...prev, payerName: '' }));
                 }}
-                placeholder="Payer name (name shown in UPI app)"
-                className={`input-field ${errors.payerName ? 'border-destructive' : ''}`}
+                placeholder="Payer Name (as shown in UPI app)"
+                className={`input-field ${errors.payerName ? 'border-destructive focus:border-destructive' : ''}`}
               />
-              {errors.payerName && (
-                <p className="text-xs text-destructive mt-1">{errors.payerName}</p>
-              )}
+              {errors.payerName && <p className="text-xs text-destructive mt-2">{errors.payerName}</p>}
             </div>
 
-            {/* Payment screenshot upload */}
+            {/* Payment Screenshot */}
             <div>
-              <p className="text-xs text-muted-foreground mb-2">Upload payment screenshot</p>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
-                  setPaymentProof(f);
-                  if (errors.paymentProof) setErrors((p) => ({ ...p, paymentProof: '' }));
-                }}
-                className={`input-field py-2 ${errors.paymentProof ? 'border-destructive' : ''}`}
-              />
-              {errors.paymentProof && (
-                <p className="text-xs text-destructive mt-1">{errors.paymentProof}</p>
-              )}
-              {paymentProof && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Selected: <span className="font-mono">{paymentProof.name}</span>
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Payment Screenshot</p>
+              <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                errors.paymentProof ? 'border-destructive' : 'border-border hover:border-primary/30 hover:bg-primary/5'
+              }`}>
+                <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                <span className="text-sm text-muted-foreground">
+                  {paymentProof ? paymentProof.name : 'Tap to upload screenshot'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setPaymentProof(f);
+                    if (errors.paymentProof) setErrors(prev => ({ ...prev, paymentProof: '' }));
+                  }}
+                  className="hidden"
+                />
+              </label>
+              {errors.paymentProof && <p className="text-xs text-destructive mt-2">{errors.paymentProof}</p>}
             </div>
           </div>
         </section>
+
+        {/* Trust Badge */}
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <Shield className="w-3.5 h-3.5" />
+          <span>Secure checkout • Verified within 24 hours</span>
+        </div>
       </div>
 
       {/* Fixed Bottom CTA */}
-      <div className="fixed bottom-16 md:bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border">
+      <div className="fixed bottom-20 md:bottom-0 left-0 right-0 p-5 bg-background/80 backdrop-blur-xl border-t border-border/50">
         <button 
           onClick={handleSubmit}
           disabled={isProcessing}
-          className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full btn-primary flex items-center justify-center gap-3"
         >
           {isProcessing ? (
             <>
-              <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
               Placing Order...
             </>
           ) : (
             'Confirm Order'
           )}
         </button>
-        <p className="text-xs text-center text-muted-foreground mt-2">
-          Order will be verified within 24 hours
-        </p>
       </div>
     </div>
   );
