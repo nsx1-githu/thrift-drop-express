@@ -80,6 +80,11 @@ export default {
         rust: "hsl(var(--rust))",
         olive: "hsl(var(--olive))",
         charcoal: "hsl(var(--charcoal))",
+        gold: "hsl(var(--gold))",
+        rose: "hsl(var(--rose))",
+        violet: "hsl(var(--violet))",
+        teal: "hsl(var(--teal))",
+        coral: "hsl(var(--coral))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
