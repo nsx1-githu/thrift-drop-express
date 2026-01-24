@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, Package, Search, RefreshCw, Phone, Copy } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Package, Search, RefreshCw, Phone, Copy, Trash2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ interface OrderItem {
 interface Order {
   id: string;
   order_id: string;
+  order_number: number;
   customer_name: string;
   customer_phone: string;
   customer_address: string;
@@ -52,6 +53,11 @@ export const OrdersPanel = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [refundDrafts, setRefundDrafts] = useState<Record<string, { reference: string; note: string }>>({});
+  const [showCleanupModal, setShowCleanupModal] = useState(false);
+  const [cleanupDays, setCleanupDays] = useState(90);
+  const [cleanupStatuses, setCleanupStatuses] = useState<string[]>(['verified', 'failed']);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [ordersToDelete, setOrdersToDelete] = useState<Order[]>([]);
 
   const copyText = async (text: string, label: string) => {
     const value = (text ?? '').trim();
@@ -156,12 +162,59 @@ export const OrdersPanel = () => {
     }
   };
 
+  // Calculate orders eligible for cleanup
+  const calculateOrdersToDelete = () => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - cleanupDays);
+    
+    return orders.filter(order => {
+      const orderDate = new Date(order.created_at);
+      const statusMatch = cleanupStatuses.includes(order.payment_status);
+      return orderDate < cutoffDate && statusMatch;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    const toDelete = calculateOrdersToDelete();
+    if (toDelete.length === 0) {
+      toast.error('No orders match the cleanup criteria');
+      return;
+    }
+    setOrdersToDelete(toDelete);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (ordersToDelete.length === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const ids = ordersToDelete.map(o => o.id);
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', ids);
+      
+      if (error) throw error;
+      
+      toast.success(`Deleted ${ordersToDelete.length} old orders`);
+      setOrdersToDelete([]);
+      setShowCleanupModal(false);
+      fetchOrders();
+    } catch (error) {
+      console.error('Error deleting orders:', error);
+      toast.error('Failed to delete orders');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesFilter = filter === 'all' || order.payment_status === filter;
     const matchesSearch = 
       order.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer_phone.includes(searchQuery);
+      order.customer_phone.includes(searchQuery) ||
+      order.order_number.toString().includes(searchQuery);
     return matchesFilter && matchesSearch;
   });
 
@@ -199,12 +252,17 @@ export const OrdersPanel = () => {
     pending: orders.filter(o => o.payment_status === 'pending').length,
     verified: orders.filter(o => o.payment_status === 'verified').length,
     failed: orders.filter(o => o.payment_status === 'failed').length,
+    highestOrderNumber: orders.length > 0 ? Math.max(...orders.map(o => o.order_number || 0)) : 0,
   };
 
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-5 gap-2">
+        <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 text-center">
+          <p className="text-xl font-bold text-primary">#{stats.highestOrderNumber}</p>
+          <p className="text-xs text-primary/80">Order #</p>
+        </div>
         <div className="p-3 bg-card rounded-lg border border-border text-center">
           <p className="text-xl font-bold">{stats.total}</p>
           <p className="text-xs text-muted-foreground">Total</p>
@@ -249,7 +307,120 @@ export const OrdersPanel = () => {
         <Button variant="outline" size="icon" onClick={fetchOrders}>
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={() => setShowCleanupModal(true)}
+          title="Delete old orders"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
       </div>
+
+      {/* Cleanup Modal */}
+      {showCleanupModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border max-w-md w-full p-4 space-y-4">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              <h3 className="font-semibold">Delete Old Orders</h3>
+            </div>
+            
+            {ordersToDelete.length === 0 ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Remove old orders to free up database space. This action cannot be undone.
+                </p>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium">Orders older than</label>
+                    <Select value={cleanupDays.toString()} onValueChange={(v) => setCleanupDays(Number(v))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">30 days</SelectItem>
+                        <SelectItem value="60">60 days</SelectItem>
+                        <SelectItem value="90">90 days</SelectItem>
+                        <SelectItem value="180">6 months</SelectItem>
+                        <SelectItem value="365">1 year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">With status</label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {['verified', 'failed', 'pending'].map(status => (
+                        <label key={status} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={cleanupStatuses.includes(status)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCleanupStatuses([...cleanupStatuses, status]);
+                              } else {
+                                setCleanupStatuses(cleanupStatuses.filter(s => s !== status));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <span className="capitalize">{status}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowCleanupModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleBulkDelete}
+                    disabled={cleanupStatuses.length === 0}
+                  >
+                    Find Orders
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm">
+                  <span className="font-semibold text-destructive">{ordersToDelete.length} orders</span> will be permanently deleted.
+                </p>
+                
+                <div className="max-h-40 overflow-y-auto space-y-1 text-xs bg-muted/50 rounded p-2">
+                  {ordersToDelete.slice(0, 10).map(o => (
+                    <div key={o.id} className="flex justify-between">
+                      <span className="font-mono">#{o.order_number} - {o.order_id}</span>
+                      <span className="text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                  {ordersToDelete.length > 10 && (
+                    <p className="text-muted-foreground">...and {ordersToDelete.length - 10} more</p>
+                  )}
+                </div>
+                
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setOrdersToDelete([])}>
+                    Back
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={confirmBulkDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : `Delete ${ordersToDelete.length} Orders`}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Orders List */}
       {isLoading ? (
@@ -287,7 +458,10 @@ export const OrdersPanel = () => {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-mono">
+                        #{order.order_number}
+                      </Badge>
                       <span className="font-mono text-sm font-semibold">{order.order_id}</span>
                       <Badge className={`${getStatusColor(order.payment_status)} border`}>
                         {getStatusIcon(order.payment_status)}
