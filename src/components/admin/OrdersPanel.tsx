@@ -180,7 +180,27 @@ export const OrdersPanel = () => {
       toast.error('No orders match the cleanup criteria');
       return;
     }
-    setOrdersToDelete(toDelete);
+    
+    // Directly delete without confirmation step
+    setIsDeleting(true);
+    try {
+      const ids = toDelete.map(o => o.id);
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', ids);
+      
+      if (error) throw error;
+      
+      toast.success(`Deleted ${toDelete.length} old orders`);
+      setShowCleanupModal(false);
+      fetchOrders();
+    } catch (error) {
+      console.error('Error deleting orders:', error);
+      toast.error('Failed to delete orders');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const confirmBulkDelete = async () => {
@@ -326,98 +346,63 @@ export const OrdersPanel = () => {
               <h3 className="font-semibold">Delete Old Orders</h3>
             </div>
             
-            {ordersToDelete.length === 0 ? (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Remove old orders to free up database space. This action cannot be undone.
-                </p>
-                
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium">Orders older than</label>
-                    <Select value={cleanupDays.toString()} onValueChange={(v) => setCleanupDays(Number(v))}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 days</SelectItem>
-                        <SelectItem value="60">60 days</SelectItem>
-                        <SelectItem value="90">90 days</SelectItem>
-                        <SelectItem value="180">6 months</SelectItem>
-                        <SelectItem value="365">1 year</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">With status</label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {['verified', 'failed', 'pending'].map(status => (
-                        <label key={status} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={cleanupStatuses.includes(status)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setCleanupStatuses([...cleanupStatuses, status]);
-                              } else {
-                                setCleanupStatuses(cleanupStatuses.filter(s => s !== status));
-                              }
-                            }}
-                            className="rounded"
-                          />
-                          <span className="capitalize">{status}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setShowCleanupModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleBulkDelete}
-                    disabled={cleanupStatuses.length === 0}
-                  >
-                    Find Orders
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-sm">
-                  <span className="font-semibold text-destructive">{ordersToDelete.length} orders</span> will be permanently deleted.
-                </p>
-                
-                <div className="max-h-40 overflow-y-auto space-y-1 text-xs bg-muted/50 rounded p-2">
-                  {ordersToDelete.slice(0, 10).map(o => (
-                    <div key={o.id} className="flex justify-between">
-                      <span className="font-mono">#{o.order_number} - {o.order_id}</span>
-                      <span className="text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</span>
-                    </div>
+            <p className="text-sm text-muted-foreground">
+              Remove old orders to free up database space. This action cannot be undone.
+            </p>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Orders older than</label>
+                <Select value={cleanupDays.toString()} onValueChange={(v) => setCleanupDays(Number(v))}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="60">60 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                    <SelectItem value="180">6 months</SelectItem>
+                    <SelectItem value="365">1 year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">With status</label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {['verified', 'failed', 'pending'].map(status => (
+                    <label key={status} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={cleanupStatuses.includes(status)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCleanupStatuses([...cleanupStatuses, status]);
+                          } else {
+                            setCleanupStatuses(cleanupStatuses.filter(s => s !== status));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="capitalize">{status}</span>
+                    </label>
                   ))}
-                  {ordersToDelete.length > 10 && (
-                    <p className="text-muted-foreground">...and {ordersToDelete.length - 10} more</p>
-                  )}
                 </div>
-                
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setOrdersToDelete([])}>
-                    Back
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={confirmBulkDelete}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? 'Deleting...' : `Delete ${ordersToDelete.length} Orders`}
-                  </Button>
-                </div>
-              </>
-            )}
+              </div>
+            </div>
+            
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowCleanupModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleBulkDelete}
+                disabled={cleanupStatuses.length === 0 || isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
           </div>
         </div>
       )}
