@@ -76,14 +76,14 @@ const OrderConfirmation = () => {
                   <p className="text-sm line-clamp-1">{item.product.name}</p>
                   <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                 </div>
-                <p className="text-sm font-mono">₹{item.product.price.toLocaleString()}</p>
+                <p className="text-sm font-mono"><span className="font-bold">₹</span>{item.product.price.toLocaleString()}</p>
               </div>
             ))}
           </div>
 
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-border">
             <span className="font-semibold">Total Paid</span>
-            <span className="price-tag text-lg">₹{order.total.toLocaleString()}</span>
+            <span className="price-tag text-lg"><span className="font-bold text-xl">₹</span>{order.total.toLocaleString()}</span>
           </div>
         </div>
 

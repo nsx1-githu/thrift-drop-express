@@ -137,7 +137,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             {product.name}
           </h3>
           <div className="flex items-baseline gap-2 pt-1">
-            <span className="price-tag text-lg">₹{product.price.toLocaleString()}</span>
+            <span className="price-tag text-lg"><span className="font-bold">₹</span>{product.price.toLocaleString()}</span>
             {product.originalPrice && (
               <span className="text-xs text-muted-foreground line-through">
                 ₹{product.originalPrice.toLocaleString()}

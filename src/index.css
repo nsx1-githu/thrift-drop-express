@@ -411,6 +411,20 @@
     box-shadow: 0 0 16px -4px hsl(var(--primary) / 0.2);
   }
 
+  /* Bold Rupee Symbol */
+  .rupee {
+    @apply font-bold;
+    font-feature-settings: 'tnum';
+  }
+
+  .price-rupee {
+    @apply text-lg font-bold text-primary;
+  }
+
+  .price-rupee-lg {
+    @apply text-2xl font-bold text-primary;
+  }
+
   /* Skeleton Loading */
   .skeleton-luxury {
     @apply relative overflow-hidden;

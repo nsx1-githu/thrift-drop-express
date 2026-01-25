@@ -157,7 +157,7 @@ const TrackOrder = () => {
                         Placed on {new Date(order.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <p className="font-semibold">₹{order.total.toLocaleString()}</p>
+                    <p className="font-semibold"><span className="font-bold">₹</span>{order.total.toLocaleString()}</p>
                   </div>
 
                   {/* Status Timeline */}
@@ -284,11 +284,11 @@ const TrackOrder = () => {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{item.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            ₹{item.price.toLocaleString()} × {item.quantity}
+                            <span className="font-bold">₹</span>{item.price.toLocaleString()} × {item.quantity}
                           </p>
                         </div>
                         <p className="font-semibold text-sm">
-                          ₹{(item.price * item.quantity).toLocaleString()}
+                          <span className="font-bold">₹</span>{(item.price * item.quantity).toLocaleString()}
                         </p>
                       </div>
                     ))}

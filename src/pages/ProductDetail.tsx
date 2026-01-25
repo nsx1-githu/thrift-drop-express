@@ -202,7 +202,7 @@ const ProductDetail = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <span className="price-tag-lg">₹{product.price.toLocaleString()}</span>
+          <span className="price-tag-lg"><span className="font-bold text-2xl">₹</span>{product.price.toLocaleString()}</span>
           {product.originalPrice && (
             <span className="text-base text-muted-foreground line-through">
               ₹{product.originalPrice.toLocaleString()}
@@ -260,7 +260,7 @@ const ProductDetail = () => {
           <div className="flex items-center gap-4">
             {[
               { icon: Shield, title: 'Authenticated', subtitle: 'Quality checked' },
-              { icon: Truck, title: 'Free Shipping', subtitle: 'Orders ₹999+' }
+              { icon: Truck, title: 'Shipping', subtitle: '₹200 flat rate' }
             ].map((item, index) => (
               <motion.div 
                 key={item.title}
