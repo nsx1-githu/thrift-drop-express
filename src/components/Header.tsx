@@ -44,22 +44,31 @@ export const Header = () => {
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="flex items-center justify-between h-20 px-5">
         {/* Logo */}
-        <Link to="/" onClick={handleLogoTap} className="flex items-center gap-3">
+        <Link to="/" onClick={handleLogoTap} className="flex items-center gap-3 group">
           {logoUrl ? (
-            <motion.img 
-              src={logoUrl} 
-              alt={storeName} 
-              className="h-12 w-auto object-contain"
+            <motion.div
+              className="relative overflow-hidden rounded-lg"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-            />
+            >
+              <img 
+                src={logoUrl} 
+                alt={storeName} 
+                className="h-12 w-auto object-contain relative z-10"
+              />
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"
+              />
+            </motion.div>
           ) : (
             <motion.span 
-              className="text-xl font-bold tracking-tight text-foreground"
+              className="relative text-xl font-bold tracking-tight overflow-hidden"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {storeName}
+              <span className="relative z-10 bg-gradient-to-r from-foreground via-primary to-foreground bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+                {storeName}
+              </span>
             </motion.span>
           )}
         </Link>
