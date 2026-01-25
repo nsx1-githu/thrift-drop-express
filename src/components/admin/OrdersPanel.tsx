@@ -128,12 +128,35 @@ export const OrdersPanel = () => {
 
   const updateOrderStatus = async (orderId: string, status: 'verified' | 'failed') => {
     try {
+      // Find the order to get product IDs
+      const order = orders.find(o => o.id === orderId);
+      
       const { error } = await supabase
         .from('orders')
         .update({ payment_status: status })
         .eq('id', orderId);
 
       if (error) throw error;
+      
+      // If order is verified, automatically mark all products in order as sold out
+      if (status === 'verified' && order?.items) {
+        const productIds = order.items.map(item => item.product_id).filter(Boolean);
+        
+        if (productIds.length > 0) {
+          const { error: soldOutError } = await supabase
+            .from('products')
+            .update({ sold_out: true })
+            .in('id', productIds);
+          
+          if (soldOutError) {
+            console.error('Error marking products as sold out:', soldOutError);
+            toast.warning('Order verified, but failed to mark products as sold out');
+          } else {
+            toast.success(`Order verified & ${productIds.length} product(s) marked sold out`);
+            return;
+          }
+        }
+      }
       
       toast.success(`Order marked as ${status}`);
       fetchOrders();
