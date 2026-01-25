@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, Settings, Images } from 'lucide-react';
+import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, Settings, Images, Layers } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { ProductForm } from '@/components/admin/ProductForm';
+import { BatchProductForm } from '@/components/admin/BatchProductForm';
 import { SettingsPanel } from '@/components/admin/SettingsPanel';
 import { MediaLibraryPanel } from '@/components/admin/MediaLibraryPanel';
 import type { Database } from '@/integrations/supabase/types';
@@ -38,6 +39,7 @@ const AdminDashboard = () => {
   const [productSearch, setProductSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBatchFormOpen, setIsBatchFormOpen] = useState(false);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [deleteImagesToo, setDeleteImagesToo] = useState(false);
@@ -161,6 +163,19 @@ const AdminDashboard = () => {
     setIsFormOpen(true);
   };
 
+  const handleBatchAddProducts = () => {
+    setIsBatchFormOpen(true);
+  };
+
+  const handleBatchFormClose = () => {
+    setIsBatchFormOpen(false);
+  };
+
+  const handleBatchFormSuccess = () => {
+    setIsBatchFormOpen(false);
+    fetchProducts();
+  };
+
   const handleFormClose = () => {
     setIsFormOpen(false);
     setEditingProduct(null);
@@ -191,6 +206,15 @@ const AdminDashboard = () => {
         product={editingProduct}
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
+      />
+    );
+  }
+
+  if (isBatchFormOpen) {
+    return (
+      <BatchProductForm
+        onClose={handleBatchFormClose}
+        onSuccess={handleBatchFormSuccess}
       />
     );
   }
@@ -238,11 +262,17 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="products" className="space-y-4">
-            {/* Add Product Button */}
-            <Button onClick={handleAddProduct} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Product
-            </Button>
+            {/* Add Product Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={handleAddProduct} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Single
+              </Button>
+              <Button onClick={handleBatchAddProducts} variant="outline" className="w-full">
+                <Layers className="w-4 h-4 mr-2" />
+                Add Multiple
+              </Button>
+            </div>
 
             {/* Search */}
             <div className="flex gap-2">
