@@ -8,8 +8,7 @@ const Cart = () => {
   const navigate = useNavigate();
   const { items, removeItem, getTotal } = useCartStore();
   const total = getTotal();
-  const shippingFree = total >= 999;
-  const shippingCost = shippingFree ? 0 : 79;
+  const shippingCost = 200;
   const finalTotal = total + shippingCost;
 
   if (items.length === 0) {
@@ -101,7 +100,7 @@ const Cart = () => {
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">Size {item.product.size}</p>
                   </div>
-                  <p className="price-tag text-lg">₹{item.product.price.toLocaleString()}</p>
+                  <p className="price-tag text-lg"><span className="font-bold">₹</span>{item.product.price.toLocaleString()}</p>
                 </div>
 
                 <motion.button 
@@ -118,28 +117,23 @@ const Cart = () => {
           </AnimatePresence>
         </div>
 
-        {/* Free Shipping Banner */}
-        <AnimatePresence>
-          {!shippingFree && (
-            <motion.div 
-              className="section-floating p-4 flex items-center gap-3"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <motion.div 
-                className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"
-                animate={{ rotate: [0, -10, 10, 0] }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <Package className="w-4 h-4 text-primary" />
-              </motion.div>
-              <p className="text-sm text-foreground">
-                Add <span className="font-semibold text-primary">₹{(999 - total).toLocaleString()}</span> more for free shipping
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Shipping Info Banner */}
+        <motion.div 
+          className="section-floating p-4 flex items-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div 
+            className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"
+            animate={{ rotate: [0, -10, 10, 0] }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <Package className="w-4 h-4 text-primary" />
+          </motion.div>
+          <p className="text-sm text-foreground">
+            Flat shipping fee: <span className="font-bold text-primary">₹{shippingCost}</span>
+          </p>
+        </motion.div>
       </div>
 
       {/* Order Summary - Fixed Bottom */}
@@ -152,13 +146,11 @@ const Cart = () => {
         <div className="space-y-3 mb-5">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-medium">₹{total.toLocaleString()}</span>
+            <span className="font-medium"><span className="font-bold">₹</span>{total.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Shipping</span>
-            <span className={`font-medium ${shippingFree ? 'text-success' : ''}`}>
-              {shippingFree ? 'Free' : `₹${shippingCost}`}
-            </span>
+            <span className="font-bold"><span className="font-bold">₹</span>{shippingCost}</span>
           </div>
           <div className="flex justify-between pt-3 border-t border-border">
             <span className="font-medium">Total</span>
@@ -168,7 +160,7 @@ const Cart = () => {
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
             >
-              ₹{finalTotal.toLocaleString()}
+              <span className="font-bold text-xl">₹</span>{finalTotal.toLocaleString()}
             </motion.span>
           </div>
         </div>

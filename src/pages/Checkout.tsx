@@ -35,8 +35,7 @@ const Checkout = () => {
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   const total = Math.round(getTotal());
-  const shippingFree = total >= 999;
-  const shippingCost = shippingFree ? 0 : 79;
+  const shippingCost = 200;
   const finalTotal = total + shippingCost;
 
   useEffect(() => {
@@ -246,18 +245,16 @@ const Checkout = () => {
                 <span className="text-muted-foreground line-clamp-1 flex-1 mr-4">
                   {item.product.name}
                 </span>
-                <span className="font-medium tabular-nums">₹{item.product.price.toLocaleString()}</span>
+                <span className="font-medium tabular-nums"><span className="font-bold">₹</span>{item.product.price.toLocaleString()}</span>
               </div>
             ))}
             <div className="flex justify-between text-sm pt-3 border-t border-border">
               <span className="text-muted-foreground">Shipping</span>
-              <span className={`font-medium ${shippingFree ? 'text-success' : ''}`}>
-                {shippingFree ? 'Free' : `₹${shippingCost}`}
-              </span>
+              <span className="font-bold"><span className="font-bold">₹</span>{shippingCost}</span>
             </div>
             <div className="flex justify-between pt-3 border-t border-border">
               <span className="font-medium">Total</span>
-              <span className="price-tag-lg">₹{finalTotal.toLocaleString()}</span>
+              <span className="price-tag-lg"><span className="font-bold text-xl">₹</span>{finalTotal.toLocaleString()}</span>
             </div>
           </div>
         </section>
@@ -316,7 +313,7 @@ const Checkout = () => {
             {/* Amount Display */}
             <div className="text-center py-4 border-b border-border">
               <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Amount to Pay</p>
-              <p className="price-tag-lg">₹{finalTotal.toLocaleString()}</p>
+              <p className="price-tag-lg"><span className="font-bold text-2xl">₹</span>{finalTotal.toLocaleString()}</p>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
