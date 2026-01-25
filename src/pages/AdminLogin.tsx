@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, Lock, Mail, Eye, EyeOff, Key } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { signIn, signUp, isAdmin, user, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [adminKey, setAdminKey] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminKey, setShowAdminKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
 
@@ -38,6 +41,23 @@ const AdminLogin = () => {
     
     try {
       if (isSignUp) {
+        // Verify admin key first
+        if (!adminKey.trim()) {
+          toast.error('Admin secret key is required for signup');
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: keyData, error: keyError } = await supabase.functions.invoke('verify-admin-key', {
+          body: { key: adminKey }
+        });
+
+        if (keyError || !keyData?.valid) {
+          toast.error('Invalid admin secret key');
+          setIsLoading(false);
+          return;
+        }
+
         const { error } = await signUp(email, password);
         if (error) {
           toast.error(error.message || 'Sign up failed');
@@ -127,6 +147,27 @@ const AdminLogin = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+
+                {isSignUp && (
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type={showAdminKey ? 'text' : 'password'}
+                      value={adminKey}
+                      onChange={(e) => setAdminKey(e.target.value)}
+                      placeholder="Admin Secret Key"
+                      className="input-field pl-10 pr-10"
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminKey(!showAdminKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showAdminKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                )}
 
                 <Button 
                   type="submit" 
