@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, Bell, Menu, X, Download } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useStoreSettings } from "@/hooks/useStoreSettings";
@@ -41,15 +42,25 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-      <div className="flex items-center justify-between h-16 px-5">
+      <div className="flex items-center justify-between h-20 px-5">
         {/* Logo */}
         <Link to="/" onClick={handleLogoTap} className="flex items-center gap-3">
           {logoUrl ? (
-            <img src={logoUrl} alt={storeName} className="h-8 w-auto object-contain" />
+            <motion.img 
+              src={logoUrl} 
+              alt={storeName} 
+              className="h-12 w-auto object-contain"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            />
           ) : (
-            <span className="text-lg font-semibold tracking-tight text-foreground">
+            <motion.span 
+              className="text-xl font-bold tracking-tight text-foreground"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               {storeName}
-            </span>
+            </motion.span>
           )}
         </Link>
 
@@ -71,65 +82,82 @@ export const Header = () => {
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {canInstall && (
             <Link
               to="/install"
-              className="hidden md:flex p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+              className="hidden md:flex p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-6 h-6" />
             </Link>
           )}
           
           <Link
             to="/search"
-            className="p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+            className="p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
           >
-            <Search className="w-5 h-5" />
+            <Search className="w-6 h-6" />
           </Link>
 
           <Link
             to="/notifications"
-            className="relative p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+            className="relative p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="w-6 h-6" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+              <motion.span 
+                className="absolute top-1.5 right-1.5 w-3 h-3 bg-gradient-to-br from-primary to-primary/80 rounded-full ring-2 ring-background shadow-lg shadow-primary/40"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500 }}
+              />
             )}
           </Link>
 
           <Link
             to="/cart"
-            className="relative p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+            className="relative p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
           >
-            <ShoppingBag className="w-5 h-5" />
+            <ShoppingBag className="w-6 h-6" />
             {itemCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
+              <motion.span 
+                className="absolute -top-0.5 -right-0.5 w-6 h-6 flex items-center justify-center text-xs font-bold bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-full shadow-lg shadow-primary/30 ring-2 ring-background"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500 }}
+                key={itemCount}
+              >
                 {itemCount}
-              </span>
+              </motion.span>
             )}
           </Link>
 
           {/* Mobile Menu Toggle */}
-          <button
+          <motion.button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground"
+            className="md:hidden p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
+            whileTap={{ scale: 0.9 }}
           >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </motion.button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border animate-fade-in">
+        <motion.div 
+          className="md:hidden absolute top-20 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           <nav className="flex flex-col p-4 gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={() => setMenuOpen(false)}
-                className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                className={`px-4 py-3.5 rounded-xl text-base font-medium transition-colors ${
                   location.pathname === link.to
                     ? 'bg-primary/10 text-primary'
                     : 'text-foreground hover:bg-muted/50'
@@ -139,7 +167,7 @@ export const Header = () => {
               </Link>
             ))}
           </nav>
-        </div>
+        </motion.div>
       )}
     </header>
   );
