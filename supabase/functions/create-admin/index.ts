@@ -23,25 +23,33 @@ serve(async (req) => {
       );
     }
 
-    // Verify admin key
-    const validAdminKey = Deno.env.get('ADMIN_SIGNUP_KEY');
-    if (!validAdminKey || adminKey !== validAdminKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid admin key' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Use service role to create user and assign admin role
+    // Use service role to check admin key from database
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
       }
     });
+
+    // First try to get admin key from database
+    const { data: settingData } = await adminClient
+      .from('store_settings')
+      .select('value')
+      .eq('key', 'admin_signup_key')
+      .maybeSingle();
+
+    // Fall back to environment variable if not in database
+    const validAdminKey = settingData?.value || Deno.env.get('ADMIN_SIGNUP_KEY');
+    
+    if (!validAdminKey || adminKey !== validAdminKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid admin key' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Try to create the user first
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
@@ -65,7 +73,7 @@ serve(async (req) => {
           );
         }
 
-        const existingUser = users.users.find(u => u.email === email);
+        const existingUser = users.users.find((u) => u.email === email);
         if (!existingUser) {
           return new Response(
             JSON.stringify({ success: false, error: 'User not found' }),

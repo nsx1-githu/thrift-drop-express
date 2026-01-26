@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +22,20 @@ serve(async (req) => {
       );
     }
 
-    const adminSignupKey = Deno.env.get('ADMIN_SIGNUP_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // First try to get admin key from database
+    const { data: settingData } = await adminClient
+      .from('store_settings')
+      .select('value')
+      .eq('key', 'admin_signup_key')
+      .maybeSingle();
+
+    // Fall back to environment variable if not in database
+    const adminSignupKey = settingData?.value || Deno.env.get('ADMIN_SIGNUP_KEY');
 
     if (!adminSignupKey) {
       console.error('ADMIN_SIGNUP_KEY not configured');

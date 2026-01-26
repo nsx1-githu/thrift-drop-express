@@ -22,6 +22,15 @@ serve(async (req) => {
       );
     }
 
+    const { newKey } = await req.json();
+
+    if (!newKey || typeof newKey !== 'string' || newKey.length < 8) {
+      return new Response(
+        JSON.stringify({ error: 'New key must be at least 8 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
@@ -60,29 +69,28 @@ serve(async (req) => {
       );
     }
 
-    // First try to get admin key from database
-    const { data: settingData } = await adminClient
+    // Upsert the admin key in store_settings
+    const { error: upsertError } = await adminClient
       .from('store_settings')
-      .select('value')
-      .eq('key', 'admin_signup_key')
-      .maybeSingle();
+      .upsert(
+        { key: 'admin_signup_key', value: newKey },
+        { onConflict: 'key' }
+      );
 
-    // Fall back to environment variable if not in database
-    const adminSignupKey = settingData?.value || Deno.env.get('ADMIN_SIGNUP_KEY');
-
-    if (!adminSignupKey) {
+    if (upsertError) {
+      console.error('Error updating admin key:', upsertError);
       return new Response(
-        JSON.stringify({ error: 'Admin key not configured' }),
+        JSON.stringify({ error: 'Failed to update admin key' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
-      JSON.stringify({ key: adminSignupKey }),
+      JSON.stringify({ success: true, message: 'Admin key updated successfully' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error getting admin key:', error);
+    console.error('Error updating admin key:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
