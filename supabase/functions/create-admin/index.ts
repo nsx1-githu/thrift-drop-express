@@ -43,37 +43,79 @@ serve(async (req) => {
       }
     });
 
-    // Create the user
+    // Try to create the user first
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email,
       password,
-      email_confirm: true // Auto-confirm email
+      email_confirm: true
     });
 
-    if (authError) {
-      console.error('Error creating user:', authError);
-      return new Response(
-        JSON.stringify({ success: false, error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    let userId: string;
 
-    if (!authData.user) {
+    if (authError) {
+      // If user already exists, try to get them and add admin role
+      if (authError.message?.includes('already been registered')) {
+        // Get existing user by email
+        const { data: users, error: listError } = await adminClient.auth.admin.listUsers();
+        
+        if (listError) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Failed to find existing user' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const existingUser = users.users.find(u => u.email === email);
+        if (!existingUser) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'User not found' }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Check if already an admin
+        const { data: existingRole } = await adminClient
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', existingUser.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (existingRole) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'This user is already an admin. Please sign in instead.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        userId = existingUser.id;
+      } else {
+        console.error('Error creating user:', authError);
+        return new Response(
+          JSON.stringify({ success: false, error: authError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else if (!authData.user) {
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to create user' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } else {
+      userId = authData.user.id;
     }
 
     // Add admin role
     const { error: roleError } = await adminClient
       .from('user_roles')
-      .insert({ user_id: authData.user.id, role: 'admin' });
+      .insert({ user_id: userId, role: 'admin' });
 
     if (roleError) {
       console.error('Error adding admin role:', roleError);
-      // Try to delete the user if role assignment fails
-      await adminClient.auth.admin.deleteUser(authData.user.id);
+      // Only delete user if we just created them (not for existing users)
+      if (authData?.user) {
+        await adminClient.auth.admin.deleteUser(authData.user.id);
+      }
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to assign admin role' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
