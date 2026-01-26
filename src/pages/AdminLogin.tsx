@@ -48,22 +48,21 @@ const AdminLogin = () => {
           return;
         }
 
-        const { data: keyData, error: keyError } = await supabase.functions.invoke('verify-admin-key', {
-          body: { key: adminKey }
+        // Use edge function to create admin with role
+        const { data, error } = await supabase.functions.invoke('create-admin', {
+          body: { email, password, adminKey }
         });
 
-        if (keyError || !keyData?.valid) {
-          toast.error('Invalid admin secret key');
+        if (error || !data?.success) {
+          toast.error(data?.error || error?.message || 'Failed to create admin account');
           setIsLoading(false);
           return;
         }
 
-        const { error } = await signUp(email, password);
-        if (error) {
-          toast.error(error.message || 'Sign up failed');
-          return;
-        }
-        toast.success('Account created! Please contact admin to get admin access.');
+        toast.success('Admin account created! You can now sign in.');
+        setIsSignUp(false);
+        setAdminKey('');
+        setPassword('');
       } else {
         const { error } = await signIn(email, password);
         if (error) {
