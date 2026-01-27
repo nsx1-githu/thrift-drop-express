@@ -222,15 +222,15 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
+        <div className="flex items-center justify-between px-4 lg:px-8 h-14">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate('/')} className="p-1">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-semibold">Admin Dashboard</h1>
+            <h1 className="font-semibold text-lg">Admin Dashboard</h1>
           </div>
           <Button variant="ghost" size="icon" onClick={handleLogout}>
             <LogOut className="w-5 h-5" />
@@ -238,32 +238,38 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="px-4 py-4">
+      <div className="px-4 lg:px-8 py-4 max-w-7xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full mb-4">
-            <TabsTrigger value="orders" className="flex-1">
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              Orders
+          <TabsList className="w-full mb-4 flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="orders" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <ShoppingBag className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Orders</span>
+              <span className="xs:hidden">📦</span>
             </TabsTrigger>
-            <TabsTrigger value="products" className="flex-1">
-              <Package className="w-4 h-4 mr-2" />
-              Products
+            <TabsTrigger value="products" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <Package className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Products</span>
+              <span className="xs:hidden">🏷️</span>
             </TabsTrigger>
-            <TabsTrigger value="media" className="flex-1">
-              <Images className="w-4 h-4 mr-2" />
-              Media
+            <TabsTrigger value="media" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <Images className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Media</span>
+              <span className="xs:hidden">🖼️</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+            <TabsTrigger value="settings" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <Settings className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Settings</span>
+              <span className="xs:hidden">⚙️</span>
             </TabsTrigger>
-            <TabsTrigger value="content" className="flex-1">
-              <FileText className="w-4 h-4 mr-2" />
-              Content
+            <TabsTrigger value="content" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <FileText className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Content</span>
+              <span className="xs:hidden">📝</span>
             </TabsTrigger>
-            <TabsTrigger value="access" className="flex-1">
-              <Users className="w-4 h-4 mr-2" />
-              Access
+            <TabsTrigger value="access" className="flex-1 min-w-[80px] text-xs sm:text-sm py-2">
+              <Users className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Access</span>
+              <span className="xs:hidden">👥</span>
             </TabsTrigger>
           </TabsList>
 
@@ -312,7 +318,7 @@ const AdminDashboard = () => {
                 <p>No products found</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredProducts.map((product) => (
                   <div 
                     key={product.id}
@@ -321,7 +327,7 @@ const AdminDashboard = () => {
                     <img 
                       src={product.images[0] || '/placeholder.svg'} 
                       alt={product.name}
-                      className="w-16 h-16 rounded object-cover bg-muted"
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded object-cover bg-muted flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{product.name}</p>
@@ -333,12 +339,18 @@ const AdminDashboard = () => {
                             Sold Out
                           </Badge>
                         )}
+                        {product.is_featured && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            ⭐
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex flex-col sm:flex-row gap-1">
                       <Button 
                         variant="ghost" 
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => handleEditProduct(product)}
                       >
                         <Pencil className="w-4 h-4" />
@@ -351,7 +363,7 @@ const AdminDashboard = () => {
                           setDeleteProduct(product);
                           setDeleteImagesToo(false);
                         }}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive h-8 w-8"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

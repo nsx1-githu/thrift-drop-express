@@ -56,21 +56,21 @@ const Products = () => {
     (priceRange[0] > 0 || priceRange[1] < 10000 ? 1 : 0);
 
   return (
-    <PageTransition className="min-h-screen pb-28">
-      <div className="px-6 py-6">
+    <PageTransition className="min-h-screen pb-28 md:pb-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl mx-auto">
         {/* Header */}
         <motion.div 
-          className="flex items-end justify-between mb-6"
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-0 mb-4 sm:mb-6"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div>
-            <p className="section-title mb-2">Collection</p>
+            <p className="section-title mb-1 sm:mb-2">Collection</p>
             <h1 className="heading-md">All Products</h1>
           </div>
           <MotionButton 
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-full transition-all ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-full transition-all ${
               showFilters || activeFilterCount > 0
                 ? 'bg-primary/10 text-primary border border-primary/20'
                 : 'bg-secondary text-secondary-foreground border border-transparent'
@@ -200,7 +200,7 @@ const Products = () => {
 
         {/* Results Count */}
         <motion.p 
-          className="text-sm text-muted-foreground mt-6 mb-4"
+          className="text-xs sm:text-sm text-muted-foreground mt-4 sm:mt-6 mb-3 sm:mb-4"
           key={filteredProducts.length}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -209,7 +209,7 @@ const Products = () => {
         </motion.p>
 
         {/* Product Grid */}
-        <StaggerWrapper className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <StaggerWrapper className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
           {isLoading
             ? Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="skeleton-luxury aspect-[3/4]" />
@@ -223,7 +223,7 @@ const Products = () => {
 
         {!isLoading && filteredProducts.length === 0 && (
           <motion.div 
-            className="text-center py-16"
+            className="text-center py-12 sm:py-16"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
