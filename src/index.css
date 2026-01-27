@@ -2,100 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
-    /* Luxury Dark Theme - Rich & Vibrant */
-    --background: 240 15% 5%;
-    --foreground: 45 20% 95%;
+    /* Warm Cream/Tan Theme - Vintage Gorpcore */
+    --background: 30 25% 94%;
+    --foreground: 25 20% 12%;
 
-    --card: 240 12% 8%;
-    --card-foreground: 45 20% 95%;
+    --card: 32 28% 90%;
+    --card-foreground: 25 20% 12%;
 
-    --popover: 240 12% 10%;
-    --popover-foreground: 45 20% 95%;
+    --popover: 30 25% 92%;
+    --popover-foreground: 25 20% 12%;
 
-    /* Rose Gold Primary */
-    --primary: 15 70% 65%;
-    --primary-foreground: 240 15% 5%;
+    /* Warm Brown Primary */
+    --primary: 25 30% 25%;
+    --primary-foreground: 30 25% 94%;
 
-    --secondary: 260 20% 15%;
-    --secondary-foreground: 280 30% 85%;
+    --secondary: 30 18% 85%;
+    --secondary-foreground: 25 20% 20%;
 
-    --muted: 250 15% 18%;
-    --muted-foreground: 250 10% 55%;
+    --muted: 32 20% 88%;
+    --muted-foreground: 25 12% 45%;
 
-    /* Warm Amber Accent */
-    --accent: 35 85% 55%;
-    --accent-foreground: 240 15% 5%;
+    /* Terracotta Accent */
+    --accent: 18 50% 42%;
+    --accent-foreground: 30 25% 94%;
 
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 45 20% 95%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 30 25% 94%;
 
-    --border: 260 15% 18%;
-    --input: 250 12% 12%;
-    --ring: 15 70% 65%;
+    --border: 30 15% 80%;
+    --input: 30 20% 92%;
+    --ring: 25 30% 25%;
 
     /* Premium Radius - Soft & Rounded */
-    --radius: 1rem;
-    --radius-sm: 0.75rem;
-    --radius-lg: 1.5rem;
-    --radius-xl: 2rem;
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
     --radius-full: 9999px;
 
-    /* Vibrant Success - Emerald */
-    --success: 160 65% 45%;
-    --success-foreground: 45 20% 95%;
+    /* Muted Success */
+    --success: 145 40% 38%;
+    --success-foreground: 30 25% 94%;
 
-    /* Warm Warning - Amber */
-    --warning: 38 90% 55%;
-    --warning-foreground: 240 15% 5%;
+    /* Warm Warning */
+    --warning: 35 75% 50%;
+    --warning-foreground: 25 20% 12%;
 
     /* Status colors */
-    --status-pending: 38 90% 55%;
-    --status-pending-foreground: 240 15% 5%;
-    --status-verified: 160 65% 45%;
-    --status-verified-foreground: 45 20% 95%;
-    --status-failed: 0 65% 55%;
-    --status-failed-foreground: 45 20% 95%;
+    --status-pending: 35 75% 50%;
+    --status-pending-foreground: 25 20% 12%;
+    --status-verified: 145 40% 38%;
+    --status-verified-foreground: 30 25% 94%;
+    --status-failed: 0 65% 50%;
+    --status-failed-foreground: 30 25% 94%;
 
-    --sidebar-background: 240 12% 7%;
-    --sidebar-foreground: 280 20% 85%;
-    --sidebar-primary: 15 70% 65%;
-    --sidebar-primary-foreground: 240 15% 5%;
-    --sidebar-accent: 260 20% 16%;
-    --sidebar-accent-foreground: 280 30% 85%;
-    --sidebar-border: 260 15% 16%;
-    --sidebar-ring: 15 70% 65%;
+    --sidebar-background: 32 28% 90%;
+    --sidebar-foreground: 25 20% 20%;
+    --sidebar-primary: 25 30% 25%;
+    --sidebar-primary-foreground: 30 25% 94%;
+    --sidebar-accent: 30 18% 85%;
+    --sidebar-accent-foreground: 25 20% 20%;
+    --sidebar-border: 30 15% 80%;
+    --sidebar-ring: 25 30% 25%;
 
-    /* Luxury Extended Palette */
-    --cream: 45 30% 92%;
-    --tan: 30 40% 70%;
-    --rust: 15 60% 50%;
-    --olive: 85 25% 40%;
-    --charcoal: 240 12% 10%;
-    --gold: 42 75% 55%;
-    --rose: 15 70% 65%;
-    --violet: 280 45% 55%;
-    --teal: 175 50% 45%;
-    --coral: 12 80% 62%;
+    /* Extended Palette - Warm Naturals */
+    --cream: 30 25% 94%;
+    --tan: 28 35% 75%;
+    --rust: 15 55% 45%;
+    --olive: 80 20% 38%;
+    --charcoal: 25 15% 18%;
+    --gold: 40 60% 50%;
+    --rose: 12 45% 55%;
+    --violet: 280 25% 45%;
+    --teal: 175 35% 40%;
+    --coral: 12 60% 55%;
     
-    /* Premium Gradients */
-    --gradient-card: linear-gradient(165deg, hsl(260 15% 12%) 0%, hsl(240 15% 7%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(240 15% 5%) 0%, hsl(260 15% 10%) 100%);
-    --gradient-premium: linear-gradient(135deg, hsl(15 70% 65% / 0.15) 0%, hsl(280 45% 55% / 0.08) 50%, transparent 100%);
-    --gradient-floating: linear-gradient(180deg, hsl(260 12% 12%) 0%, hsl(240 12% 8%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(15 70% 65%) 0%, hsl(35 85% 55%) 100%);
-    --gradient-glow: radial-gradient(ellipse at center, hsl(15 70% 65% / 0.2) 0%, transparent 70%);
+    /* Subtle Gradients */
+    --gradient-card: linear-gradient(165deg, hsl(32 28% 92%) 0%, hsl(30 25% 88%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(30 25% 94%) 0%, hsl(32 20% 90%) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(25 30% 25% / 0.05) 0%, hsl(18 50% 42% / 0.03) 50%, transparent 100%);
+    --gradient-floating: linear-gradient(180deg, hsl(32 28% 92%) 0%, hsl(30 25% 88%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(25 30% 25%) 0%, hsl(18 50% 42%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(25 30% 25% / 0.08) 0%, transparent 70%);
     
-    /* Luxury Shadows - Colorful & Diffused */
-    --shadow-sm: 0 4px 12px -4px hsl(0 0% 0% / 0.3);
-    --shadow-md: 0 12px 32px -8px hsl(0 0% 0% / 0.4);
-    --shadow-lg: 0 24px 64px -16px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 40px -10px hsl(15 70% 65% / 0.25);
-    --shadow-glow-accent: 0 0 30px -8px hsl(35 85% 55% / 0.3);
-    --shadow-floating: 0 8px 40px -12px hsl(280 50% 20% / 0.4), 0 4px 16px -4px hsl(0 0% 0% / 0.35);
+    /* Subtle Shadows */
+    --shadow-sm: 0 2px 8px -2px hsl(25 20% 20% / 0.08);
+    --shadow-md: 0 8px 24px -6px hsl(25 20% 20% / 0.12);
+    --shadow-lg: 0 16px 48px -12px hsl(25 20% 20% / 0.15);
+    --shadow-glow: 0 0 30px -8px hsl(25 30% 25% / 0.12);
+    --shadow-glow-accent: 0 0 24px -6px hsl(18 50% 42% / 0.15);
+    --shadow-floating: 0 6px 32px -10px hsl(25 20% 20% / 0.12), 0 2px 12px -2px hsl(25 20% 20% / 0.08);
   }
 }
 
@@ -106,25 +106,18 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Space Grotesk', sans-serif;
-    letter-spacing: -0.01em;
+    font-family: 'Playfair Display', 'Georgia', serif;
+    letter-spacing: 0;
   }
 
-  /* Rich ambient glow overlays */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    opacity: 0.5;
-    z-index: -1;
-    background: 
-      radial-gradient(ellipse 60% 40% at 10% 0%, hsl(280 45% 55% / 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse 50% 35% at 90% 10%, hsl(15 70% 65% / 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(35 85% 55% / 0.04) 0%, transparent 60%);
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', 'Georgia', serif;
+    font-weight: 400;
+  }
+
+  button, .btn-primary, .btn-secondary, .category-chip, nav {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.02em;
   }
 }
 
