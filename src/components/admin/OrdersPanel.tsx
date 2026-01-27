@@ -137,24 +137,44 @@ export const OrdersPanel = () => {
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Get product IDs from order items (filter to valid UUIDs only)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const productIds = order?.items
+        ?.map(item => item.product_id)
+        .filter((id): id is string => Boolean(id) && uuidRegex.test(id)) ?? [];
       
-      // If order is verified, automatically mark all products in order as sold out
-      if (status === 'verified' && order?.items) {
-        const productIds = order.items.map(item => item.product_id).filter(Boolean);
+      // If order is verified, ensure products are marked as sold out
+      if (status === 'verified' && productIds.length > 0) {
+        const { error: soldOutError } = await supabase
+          .from('products')
+          .update({ sold_out: true })
+          .in('id', productIds);
         
-        if (productIds.length > 0) {
-          const { error: soldOutError } = await supabase
-            .from('products')
-            .update({ sold_out: true })
-            .in('id', productIds);
-          
-          if (soldOutError) {
-            console.error('Error marking products as sold out:', soldOutError);
-            toast.warning('Order verified, but failed to mark products as sold out');
-          } else {
-            toast.success(`Order verified & ${productIds.length} product(s) marked sold out`);
-            return;
-          }
+        if (soldOutError) {
+          console.error('Error marking products as sold out:', soldOutError);
+          toast.warning('Order verified, but failed to mark products as sold out');
+        } else {
+          toast.success(`Order verified & ${productIds.length} product(s) marked sold out`);
+          fetchOrders();
+          return;
+        }
+      }
+      
+      // If order is rejected/failed, unmark products as sold out so they can be ordered again
+      if (status === 'failed' && productIds.length > 0) {
+        const { error: unmarkError } = await supabase
+          .from('products')
+          .update({ sold_out: false })
+          .in('id', productIds);
+        
+        if (unmarkError) {
+          console.error('Error unmarking products:', unmarkError);
+          toast.warning('Order rejected, but failed to restore product availability');
+        } else {
+          toast.success(`Order rejected & ${productIds.length} product(s) restored to available`);
+          fetchOrders();
+          return;
         }
       }
       
