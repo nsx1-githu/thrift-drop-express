@@ -323,22 +323,35 @@ Deno.serve(async (req) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const productIds = [...new Set(order.items.map(it => it.product_id))].filter(id => uuidRegex.test(id));
 
-    // Check if any ordered products are already sold out
+    // Use atomic reservation to prevent race conditions
+    // This uses database-level locking to ensure only one order can claim an item
     if (productIds.length > 0) {
-      const { data: soldOutCheck } = await supabase
-        .from("products")
-        .select("id, name")
-        .in("id", productIds)
-        .eq("sold_out", true);
+      const { data: reserveResult, error: reserveError } = await supabase.rpc(
+        'reserve_products_for_order',
+        {
+          _product_ids: productIds,
+          _order_id: orderId
+        }
+      );
 
-      if (soldOutCheck && soldOutCheck.length > 0) {
-        const soldOutNames = soldOutCheck.map(p => p.name).join(", ");
+      if (reserveError) {
+        console.error('Reservation error:', reserveError);
+        return jsonResponse(500, { error: "Failed to reserve products. Please try again." });
+      }
+
+      // Check if reservation was successful
+      const reservation = reserveResult?.[0];
+      if (!reservation?.success) {
+        const unavailable = reservation?.unavailable_products || [];
+        const names = unavailable.map((p: { name: string }) => p.name).join(", ");
         return jsonResponse(400, { 
-          error: `Sorry, these items are already sold: ${soldOutNames}` 
+          error: `Sorry, these items were just sold: ${names}. Please remove them from your cart.`,
+          unavailable_product_ids: unavailable.map((p: { id: string }) => p.id)
         });
       }
     }
 
+    // Products are now reserved (marked as sold_out), create the order
     const { error } = await supabase.from("orders").insert({
       order_id: orderId,
       customer_name: order.customer_name,
@@ -355,22 +368,20 @@ Deno.serve(async (req) => {
       total: order.total,
       payment_method: order.payment_method,
       payment_status: "pending",
-      // Stored in existing column used by the UI as UPI reference.
       razorpay_payment_id: order.payment_reference,
       payment_payer_name: order.payment_payer_name ?? null,
       payment_proof_url: finalPaymentProofUrl,
     });
 
     if (error) {
-      return jsonResponse(500, { error: "Failed to create order" });
-    }
-
-    // Mark ordered products as sold out immediately
-    if (productIds.length > 0) {
-      await supabase
-        .from("products")
-        .update({ sold_out: true })
-        .in("id", productIds);
+      // If order creation fails, release the reserved products
+      if (productIds.length > 0) {
+        await supabase.rpc('release_products_from_order', {
+          _product_ids: productIds
+        });
+      }
+      console.error('Order creation error:', error);
+      return jsonResponse(500, { error: "Failed to create order. Products have been released." });
     }
 
     return jsonResponse(200, { orderId });

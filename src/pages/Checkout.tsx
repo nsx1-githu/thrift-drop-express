@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Copy, Check, QrCode, Loader2, Shield, Upload } from 'lucide-react';
+import { ChevronLeft, Copy, Check, QrCode, Loader2, Shield, Upload, AlertTriangle } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useCartAvailability } from '@/hooks/useCartAvailability';
 
 interface StoreSettings {
   store_name: string;
@@ -14,8 +15,12 @@ interface StoreSettings {
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { items, getTotal, clearCart } = useCartStore();
+  const { items, getTotal, clearCart, removeItem } = useCartStore();
   const { addNotification, upsertCustomerOrder } = useNotificationStore();
+  
+  // Monitor cart items for real-time availability
+  useCartAvailability();
+  
   const [upiRefNumber, setUpiRefNumber] = useState('');
   const [paymentPayerName, setPaymentPayerName] = useState('');
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -200,6 +205,19 @@ const Checkout = () => {
       if (error) throw error;
 
       const payloadError = (data as any)?.error as string | undefined;
+      const unavailableIds = (data as any)?.unavailable_product_ids as string[] | undefined;
+      
+      // Handle sold-out items by removing them from cart
+      if (payloadError && unavailableIds && unavailableIds.length > 0) {
+        unavailableIds.forEach(id => removeItem(id));
+        toast.error(payloadError, {
+          duration: 5000,
+          icon: <AlertTriangle className="w-4 h-4" />,
+        });
+        setIsProcessing(false);
+        return;
+      }
+      
       if (payloadError) throw new Error(payloadError);
       const orderId = (data as any)?.orderId as string | undefined;
       if (!orderId) throw new Error('Missing orderId');
