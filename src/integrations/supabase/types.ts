@@ -202,7 +202,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_insert_order: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -210,7 +209,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      order_insert_secret: { Args: never; Returns: string }
       track_order: {
         Args: { _customer_phone: string; _order_id: string }
         Returns: {
