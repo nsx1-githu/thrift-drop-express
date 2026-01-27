@@ -59,9 +59,9 @@ const Home = () => {
             transition={{ duration: 0.4, delay: 0.3 }}
           >
             <Link to="/products">
-              <MotionButton className="btn-primary inline-flex items-center gap-3 bg-gradient-to-r from-primary to-accent hover:shadow-glow">
+              <MotionButton className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold rounded-full bg-gradient-to-r from-primary via-accent to-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                 Explore Collection
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" />
               </MotionButton>
             </Link>
           </motion.div>
