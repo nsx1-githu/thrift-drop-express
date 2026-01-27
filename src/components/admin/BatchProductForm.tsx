@@ -40,6 +40,7 @@ interface ProductEntry {
   size: Database['public']['Enums']['product_size'] | '';
   description: string;
   sold_out: boolean;
+  is_featured: boolean;
   images: string[];
   uploadingImages: boolean;
   errors: Record<string, string>;
@@ -60,6 +61,7 @@ const createEmptyProduct = (): ProductEntry => ({
   size: '',
   description: '',
   sold_out: false,
+  is_featured: false,
   images: [],
   uploadingImages: false,
   errors: {},
@@ -101,6 +103,7 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
       id: crypto.randomUUID(),
       name: `${source.name} (Copy)`,
       images: [...source.images],
+      is_featured: source.is_featured,
       errors: {},
     };
     
@@ -240,6 +243,7 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
         size: p.size as Database['public']['Enums']['product_size'],
         description: p.description.trim() || null,
         sold_out: p.sold_out,
+        is_featured: p.is_featured,
         images: p.images,
       }));
 
@@ -260,7 +264,7 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-40">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
@@ -480,8 +484,8 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
                       />
                     </div>
 
-                    {/* Actions Row */}
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                    {/* Toggles Row */}
+                    <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-border">
                       <div className="flex items-center gap-2">
                         <Switch
                           id={`sold_out_${product.id}`}
@@ -492,27 +496,39 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
                           Sold Out
                         </Label>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => duplicateProduct(product.id)}
-                        >
-                          <Copy className="w-4 h-4 mr-1" />
-                          Duplicate
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeProduct(product.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Remove
-                        </Button>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id={`is_featured_${product.id}`}
+                          checked={product.is_featured}
+                          onCheckedChange={(checked) => updateProductField(product.id, 'is_featured', checked)}
+                        />
+                        <Label htmlFor={`is_featured_${product.id}`} className="text-xs text-primary">
+                          ⭐ Featured
+                        </Label>
                       </div>
+                    </div>
+
+                    {/* Actions Row */}
+                    <div className="flex justify-end gap-1 pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => duplicateProduct(product.id)}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Duplicate
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeProduct(product.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Remove
+                      </Button>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -534,7 +550,7 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
       </form>
 
       {/* Fixed Submit Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border">
+      <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-10">
         <Button
           type="submit"
           onClick={handleSubmit}
