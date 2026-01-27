@@ -205,12 +205,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_products_availability: {
+        Args: { _product_ids: string[] }
+        Returns: {
+          is_available: boolean
+          product_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      release_products_from_order: {
+        Args: { _product_ids: string[] }
+        Returns: undefined
+      }
+      reserve_products_for_order: {
+        Args: { _order_id: string; _product_ids: string[] }
+        Returns: {
+          success: boolean
+          unavailable_products: Json
+        }[]
       }
       track_order: {
         Args: { _customer_phone: string; _order_id: string }

@@ -3,10 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, ShoppingBag, ArrowRight, Package } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { PageTransition, MotionButton } from '@/components/ui/motion';
+import { useCartAvailability } from '@/hooks/useCartAvailability';
 
 const Cart = () => {
   const navigate = useNavigate();
   const { items, removeItem, getTotal } = useCartStore();
+  
+  // Monitor cart items for availability changes in real-time
+  useCartAvailability();
+  
   const total = getTotal();
   const shippingCost = 200;
   const finalTotal = total + shippingCost;
