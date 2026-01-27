@@ -50,7 +50,7 @@ export const BottomNav = () => {
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
     >
-      <div className="bg-card/80 backdrop-blur-xl border border-primary/20 rounded-3xl shadow-2xl shadow-primary/10 px-3 py-3">
+      <div className="bg-card/80 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl shadow-primary/10 px-2 py-2">
         <div className="flex items-center justify-around">
           {navItems.map((item) => {
             const isActive = location.pathname === item.to;
@@ -58,7 +58,7 @@ export const BottomNav = () => {
               <Link
                 key={item.to}
                 to={item.to}
-                className="flex flex-col items-center justify-center flex-1 py-2 px-1"
+                className="flex flex-col items-center justify-center flex-1 py-1 px-1"
               >
                 <motion.div 
                   className="relative"
@@ -91,7 +91,7 @@ export const BottomNav = () => {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <item.icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                    <item.icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
                   </motion.div>
 
                   {/* Cart Badge */}
@@ -115,7 +115,7 @@ export const BottomNav = () => {
                     opacity: isActive ? 1 : 0.6,
                     fontWeight: isActive ? 600 : 500
                   }}
-                  className={`text-xs mt-2 tracking-wide ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+                  className={`text-[10px] mt-1 tracking-wide ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
                 >
                   {item.label}
                 </motion.span>
