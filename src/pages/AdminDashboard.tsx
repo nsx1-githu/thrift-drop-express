@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, Settings, Images, Layers, Users } from 'lucide-react';
+import { ChevronLeft, LogOut, Package, Plus, Pencil, Trash2, Search, RefreshCw, ShoppingBag, Settings, Images, Layers, Users, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -25,6 +25,7 @@ import { BatchProductForm } from '@/components/admin/BatchProductForm';
 import { SettingsPanel } from '@/components/admin/SettingsPanel';
 import { MediaLibraryPanel } from '@/components/admin/MediaLibraryPanel';
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
+import { ContentManagementPanel } from '@/components/admin/ContentManagementPanel';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -256,6 +257,10 @@ const AdminDashboard = () => {
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </TabsTrigger>
+            <TabsTrigger value="content" className="flex-1">
+              <FileText className="w-4 h-4 mr-2" />
+              Content
+            </TabsTrigger>
             <TabsTrigger value="access" className="flex-1">
               <Users className="w-4 h-4 mr-2" />
               Access
@@ -363,6 +368,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="settings">
             <SettingsPanel />
+          </TabsContent>
+
+          <TabsContent value="content">
+            <ContentManagementPanel />
           </TabsContent>
 
           <TabsContent value="access">
