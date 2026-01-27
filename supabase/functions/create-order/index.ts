@@ -228,6 +228,26 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRole);
     const orderId = generateOrderId();
 
+    // Extract unique product IDs that are valid UUIDs (skip mock IDs)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const productIds = [...new Set(order.items.map(it => it.product_id))].filter(id => uuidRegex.test(id));
+
+    // Check if any ordered products are already sold out
+    if (productIds.length > 0) {
+      const { data: soldOutCheck } = await supabase
+        .from("products")
+        .select("id, name")
+        .in("id", productIds)
+        .eq("sold_out", true);
+
+      if (soldOutCheck && soldOutCheck.length > 0) {
+        const soldOutNames = soldOutCheck.map(p => p.name).join(", ");
+        return jsonResponse(400, { 
+          error: `Sorry, these items are already sold: ${soldOutNames}` 
+        });
+      }
+    }
+
     const { error } = await supabase.from("orders").insert({
       order_id: orderId,
       customer_name: order.customer_name,
@@ -247,6 +267,14 @@ Deno.serve(async (req) => {
 
     if (error) {
       return jsonResponse(500, { error: "Failed to create order" });
+    }
+
+    // Mark ordered products as sold out immediately
+    if (productIds.length > 0) {
+      await supabase
+        .from("products")
+        .update({ sold_out: true })
+        .in("id", productIds);
     }
 
     return jsonResponse(200, { orderId });
