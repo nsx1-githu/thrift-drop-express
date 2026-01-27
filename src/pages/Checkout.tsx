@@ -145,21 +145,18 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      let paymentProofUrl = '';
+      // Convert payment proof to base64 for server-side upload
+      let paymentProofBase64 = '';
+      let paymentProofMime = '';
       if (paymentProof) {
-        const ext = paymentProof.name.split('.').pop() || 'jpg';
-        const random = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-          ? (crypto as any).randomUUID()
-          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-        const path = `payments/${Date.now()}-${random}.${ext}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(path, paymentProof, { contentType: paymentProof.type, upsert: false });
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path);
-        paymentProofUrl = urlData.publicUrl;
+        const arrayBuffer = await paymentProof.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        paymentProofBase64 = btoa(binary);
+        paymentProofMime = paymentProof.type;
       }
 
       const orderItems = items.map(item => ({
@@ -196,7 +193,8 @@ const Checkout = () => {
           payment_method: 'UPI',
           payment_reference: upiRefNumber.trim(),
           payment_payer_name: paymentPayerName.trim(),
-          payment_proof_url: paymentProofUrl,
+          payment_proof_base64: paymentProofBase64,
+          payment_proof_mime: paymentProofMime,
         },
       });
       if (error) throw error;

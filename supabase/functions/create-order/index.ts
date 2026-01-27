@@ -67,6 +67,8 @@ type CreateOrderPayload = {
   payment_reference: string;
   payment_payer_name?: string;
   payment_proof_url?: string;
+  payment_proof_base64?: string;
+  payment_proof_mime?: string;
 };
 
 function isValidProductId(v: string) {
@@ -112,6 +114,8 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
   const payment_method = asTrimmedString(p.payment_method);
   const payment_payer_name = asTrimmedString(p.payment_payer_name);
   const payment_proof_url = asTrimmedString(p.payment_proof_url);
+  const payment_proof_base64 = asTrimmedString(p.payment_proof_base64);
+  const payment_proof_mime = asTrimmedString(p.payment_proof_mime);
   const subtotal = asInt(p.subtotal);
   const shipping = asInt(p.shipping);
   const total = asInt(p.total);
@@ -152,6 +156,16 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
   }
   if (payment_proof_url && !/^https?:\/\//i.test(payment_proof_url)) {
     return { ok: false, error: "Invalid payment proof URL" };
+  }
+  // Validate base64 image upload (max ~2MB base64 = ~2.7MB string)
+  if (payment_proof_base64 && payment_proof_base64.length > 3_000_000) {
+    return { ok: false, error: "Payment proof image too large (max 2MB)" };
+  }
+  if (payment_proof_base64 && !payment_proof_mime) {
+    return { ok: false, error: "Missing payment proof MIME type" };
+  }
+  if (payment_proof_mime && !/^image\/(jpeg|jpg|png|webp|gif)$/i.test(payment_proof_mime)) {
+    return { ok: false, error: "Invalid payment proof format (use JPG, PNG, or WebP)" };
   }
   if (payment_method !== "UPI") return { ok: false, error: "Invalid payment method" };
   if (subtotal === null || subtotal < 0 || subtotal > 100_000_000) {
@@ -207,6 +221,8 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
       payment_reference,
       payment_payer_name: payment_payer_name ?? undefined,
       payment_proof_url: payment_proof_url ?? undefined,
+      payment_proof_base64: payment_proof_base64 ?? undefined,
+      payment_proof_mime: payment_proof_mime ?? undefined,
     },
   };
 }
@@ -259,6 +275,50 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRole);
     const orderId = generateOrderId();
 
+    // Handle payment proof upload server-side if base64 provided
+    let finalPaymentProofUrl = order.payment_proof_url ?? null;
+    if (order.payment_proof_base64 && order.payment_proof_mime) {
+      try {
+        // Decode base64 to binary
+        const binaryString = atob(order.payment_proof_base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Determine file extension from MIME type
+        const extMap: Record<string, string> = {
+          'image/jpeg': 'jpg',
+          'image/jpg': 'jpg',
+          'image/png': 'png',
+          'image/webp': 'webp',
+          'image/gif': 'gif',
+        };
+        const ext = extMap[order.payment_proof_mime.toLowerCase()] || 'jpg';
+        const path = `payments/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(path, bytes, { 
+            contentType: order.payment_proof_mime, 
+            upsert: false 
+          });
+        
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('product-images')
+            .getPublicUrl(path);
+          finalPaymentProofUrl = urlData.publicUrl;
+        } else {
+          console.error('Payment proof upload error:', uploadError);
+          // Continue without failing the order - payment can be verified manually
+        }
+      } catch (uploadErr) {
+        console.error('Payment proof processing error:', uploadErr);
+        // Continue without failing the order
+      }
+    }
+
     // Extract unique product IDs that are valid UUIDs (skip mock IDs)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const productIds = [...new Set(order.items.map(it => it.product_id))].filter(id => uuidRegex.test(id));
@@ -298,7 +358,7 @@ Deno.serve(async (req) => {
       // Stored in existing column used by the UI as UPI reference.
       razorpay_payment_id: order.payment_reference,
       payment_payer_name: order.payment_payer_name ?? null,
-      payment_proof_url: order.payment_proof_url ?? null,
+      payment_proof_url: finalPaymentProofUrl,
     });
 
     if (error) {
