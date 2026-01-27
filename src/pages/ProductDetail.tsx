@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ShoppingBag, Check, Shield, Truck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingBag, Check, Shield, Truck, AlertTriangle } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { PageTransition, MotionButton } from '@/components/ui/motion';
+import { useProductAvailability } from '@/hooks/useProductAvailability';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,14 +42,20 @@ const ProductDetail = () => {
     );
   }
 
+  // Real-time availability check
+  const { isAvailable } = useProductAvailability(product.id);
+  const isSoldOut = product.soldOut || isAvailable === false;
+  
   const isInCart = items.some(item => item.product.id === product.id);
   const discount = product.originalPrice 
     ? Math.round((1 - product.price / product.originalPrice) * 100)
     : 0;
 
   const handleAddToCart = () => {
-    if (product.soldOut) {
-      toast.error('This item is sold out');
+    if (isSoldOut) {
+      toast.error('This item was just sold!', {
+        icon: <AlertTriangle className="w-4 h-4" />,
+      });
       return;
     }
     if (isInCart) {
@@ -88,7 +95,7 @@ const ProductDetail = () => {
           />
         </AnimatePresence>
         
-        {product.soldOut && (
+        {isSoldOut && (
           <div className="sold-out-overlay">
             <span className="sold-out-text text-base">Sold Out</span>
           </div>
@@ -146,7 +153,7 @@ const ProductDetail = () => {
 
         {/* Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
-          {!product.soldOut && discount > 0 && (
+          {!isSoldOut && discount > 0 && (
             <motion.span 
               className="px-4 py-1.5 text-sm font-semibold bg-accent text-accent-foreground rounded-full"
               initial={{ opacity: 0, x: 20 }}
@@ -294,16 +301,16 @@ const ProductDetail = () => {
       >
         <MotionButton 
           onClick={handleAddToCart}
-          disabled={product.soldOut}
+          disabled={isSoldOut}
           className={`w-full flex items-center justify-center gap-3 py-4 rounded-full font-semibold text-base transition-colors ${
-            product.soldOut 
+            isSoldOut 
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
               : isInCart
                 ? 'bg-success text-success-foreground'
                 : 'btn-primary'
           }`}
         >
-          {product.soldOut ? (
+          {isSoldOut ? (
             'Sold Out'
           ) : isInCart ? (
             <>
