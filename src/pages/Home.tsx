@@ -14,10 +14,11 @@ const Home = () => {
 
   const { data: products = [], isLoading } = useStorefrontProducts();
 
-  const latestDrops = products
-    .filter(p => !p.soldOut)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 6);
+  // Get featured products for highlights, fallback to latest drops if none featured
+  const featuredProducts = products.filter(p => p.isFeatured && !p.soldOut);
+  const latestDrops = featuredProducts.length > 0 
+    ? featuredProducts 
+    : products.filter(p => !p.soldOut).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 6);
 
   const filteredProducts = selectedCategory === 'all'
     ? products

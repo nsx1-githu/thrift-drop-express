@@ -5,6 +5,7 @@ export type Condition = 'mint' | 'good' | 'fair';
 export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'FREE';
 
 export interface Product {
+  isFeatured?: boolean;
   id: string;
   name: string;
   brand: string;
