@@ -42,6 +42,7 @@ export const ProductForm = ({ product, onClose, onSuccess }: ProductFormProps) =
     size: product?.size || '' as Database['public']['Enums']['product_size'] | '',
     description: product?.description || '',
     sold_out: product?.sold_out || false,
+    is_featured: (product as any)?.is_featured || false,
   });
   
   const [images, setImages] = useState<string[]>(product?.images || []);
@@ -165,6 +166,7 @@ export const ProductForm = ({ product, onClose, onSuccess }: ProductFormProps) =
         size: formData.size as Database['public']['Enums']['product_size'],
         description: formData.description.trim() || null,
         sold_out: formData.sold_out,
+        is_featured: formData.is_featured,
         images,
       };
 
@@ -420,6 +422,21 @@ export const ProductForm = ({ product, onClose, onSuccess }: ProductFormProps) =
             id="sold_out"
             checked={formData.sold_out}
             onCheckedChange={(checked) => setFormData(prev => ({ ...prev, sold_out: checked }))}
+          />
+        </div>
+
+        {/* Featured Toggle */}
+        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/20">
+          <div>
+            <Label htmlFor="is_featured" className="font-medium">⭐ Feature in Highlights</Label>
+            <p className="text-xs text-muted-foreground">
+              Product will appear in the homepage carousel
+            </p>
+          </div>
+          <Switch
+            id="is_featured"
+            checked={formData.is_featured}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_featured: checked }))}
           />
         </div>
 

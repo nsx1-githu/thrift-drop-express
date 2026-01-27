@@ -15,6 +15,7 @@ type ProductRow = {
   description: string | null;
   sold_out: boolean;
   created_at: string;
+  is_featured: boolean;
 };
 
 const mapRowToProduct = (row: ProductRow): Product => {
@@ -31,6 +32,7 @@ const mapRowToProduct = (row: ProductRow): Product => {
     description: row.description ?? "",
     soldOut: row.sold_out,
     createdAt: new Date(row.created_at),
+    isFeatured: row.is_featured,
   };
 };
 
@@ -41,7 +43,7 @@ export const useStorefrontProducts = () => {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id,name,brand,price,original_price,images,category,condition,size,description,sold_out,created_at",
+          "id,name,brand,price,original_price,images,category,condition,size,description,sold_out,created_at,is_featured",
         )
         .order("created_at", { ascending: false });
 
