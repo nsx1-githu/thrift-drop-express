@@ -35,6 +35,10 @@ export const BottomNav = () => {
   const itemCount = useCartStore((state) => state.getItemCount());
   const canInstall = usePwaInstallAvailable();
 
+  // Hide on admin pages
+  const isAdminPage = location.pathname.startsWith('/admin');
+  if (isAdminPage) return null;
+
   const navItems = [
     { to: '/', icon: Home, label: 'Home' },
     { to: '/products', icon: Grid, label: 'Shop' },
