@@ -7,12 +7,14 @@ import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category } from '@/types/product';
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
+import { useSiteContent } from "@/hooks/useSiteContent";
 import { PageTransition, StaggerWrapper, StaggerItem, MotionButton } from '@/components/ui/motion';
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
 
   const { data: products = [], isLoading } = useStorefrontProducts();
+  const { getContent } = useSiteContent();
 
   // Get featured products for highlights, fallback to latest drops if none featured
   const featuredProducts = products.filter(p => p.isFeatured && !p.soldOut);
@@ -23,6 +25,30 @@ const Home = () => {
   const filteredProducts = selectedCategory === 'all'
     ? products
     : products.filter(p => p.category === selectedCategory);
+
+  // Get benefit content
+  const benefits = [
+    { 
+      icon: Leaf, 
+      title: getContent('content_benefit_1_title'), 
+      desc: getContent('content_benefit_1_desc') 
+    },
+    { 
+      icon: Sparkles, 
+      title: getContent('content_benefit_2_title'), 
+      desc: getContent('content_benefit_2_desc') 
+    },
+    { 
+      icon: Heart, 
+      title: getContent('content_benefit_3_title'), 
+      desc: getContent('content_benefit_3_desc') 
+    },
+    { 
+      icon: Recycle, 
+      title: getContent('content_benefit_4_title'), 
+      desc: getContent('content_benefit_4_desc') 
+    }
+  ];
 
   return (
     <PageTransition className="min-h-screen pb-28">
@@ -35,7 +61,7 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            Sustainable Fashion
+            {getContent('content_hero_subtitle')}
           </motion.p>
           <motion.h1 
             className="text-4xl md:text-5xl lg:text-6xl font-normal mb-8 leading-tight text-foreground"
@@ -43,7 +69,7 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            What is Thrifting?
+            {getContent('content_hero_title')}
           </motion.h1>
           <motion.p 
             className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed max-w-xl mx-auto"
@@ -51,7 +77,7 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
-            Thrifting is the art of finding pre-loved treasures. It's about giving beautiful pieces a second life while reducing fashion's environmental footprint.
+            {getContent('content_hero_description')}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -60,7 +86,7 @@ const Home = () => {
           >
             <Link to="/products">
               <MotionButton className="inline-flex items-center gap-3 px-8 py-4 text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-none border border-primary">
-                SHOP NOW
+                {getContent('content_hero_button')}
                 <ArrowRight className="w-4 h-4" />
               </MotionButton>
             </Link>
@@ -76,31 +102,12 @@ const Home = () => {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-2xl md:text-3xl text-center mb-12 text-foreground">Why Thrift?</h2>
+          <h2 className="text-2xl md:text-3xl text-center mb-12 text-foreground">
+            {getContent('content_why_thrift_title')}
+          </h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { 
-                icon: Leaf, 
-                title: 'Eco-Friendly', 
-                desc: 'Reduce textile waste and carbon footprint' 
-              },
-              { 
-                icon: Sparkles, 
-                title: 'Unique Finds', 
-                desc: 'One-of-a-kind pieces you won\'t find elsewhere' 
-              },
-              { 
-                icon: Heart, 
-                title: 'Affordable', 
-                desc: 'Premium brands at a fraction of retail' 
-              },
-              { 
-                icon: Recycle, 
-                title: 'Circular', 
-                desc: 'Extend the lifecycle of quality garments' 
-              }
-            ].map((item, index) => (
+            {benefits.map((item, index) => (
               <motion.div 
                 key={item.title}
                 className="text-center"
@@ -130,7 +137,9 @@ const Home = () => {
         >
           <div className="flex items-center gap-3">
             <Eye className="w-5 h-5 text-primary" />
-            <h2 className="text-2xl md:text-3xl text-foreground">Highlights</h2>
+            <h2 className="text-2xl md:text-3xl text-foreground">
+              {getContent('content_highlights_title')}
+            </h2>
           </div>
           <Link to="/products" className="text-sm uppercase tracking-wider text-foreground hover:text-muted-foreground transition-colors flex items-center gap-2">
             View All
@@ -151,7 +160,9 @@ const Home = () => {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-2xl md:text-3xl mb-6 text-foreground">Shop by Category</h2>
+          <h2 className="text-2xl md:text-3xl mb-6 text-foreground">
+            {getContent('content_category_title')}
+          </h2>
         </motion.div>
         
         <CategoryFilter 
