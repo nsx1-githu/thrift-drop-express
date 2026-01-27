@@ -451,6 +451,14 @@ const Checkout = () => {
               <p>3. Enter the transaction reference number below</p>
             </div>
 
+            {/* No Refund Policy */}
+            <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/20">
+              <p className="text-sm font-semibold text-destructive">⚠️ No Refund Policy</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                All sales are final. Please review your order carefully before completing payment.
+              </p>
+            </div>
+
             {/* Transaction Reference */}
             <div>
               <input

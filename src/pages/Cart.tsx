@@ -139,6 +139,21 @@ const Cart = () => {
             Flat shipping fee: <span className="font-bold text-primary">₹{shippingCost}</span>
           </p>
         </motion.div>
+
+        {/* No Refund Policy */}
+        <motion.div 
+          className="section-floating p-4 flex items-center gap-3 bg-destructive/5 border-destructive/20"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
+            <Package className="w-4 h-4 text-destructive" />
+          </div>
+          <p className="text-sm text-foreground">
+            <span className="font-semibold text-destructive">No refunds.</span> Please shop carefully.
+          </p>
+        </motion.div>
       </div>
 
       {/* Order Summary - Fixed Bottom */}
