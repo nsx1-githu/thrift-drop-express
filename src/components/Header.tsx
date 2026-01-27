@@ -42,7 +42,7 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-      <div className="flex items-center justify-between h-20 px-5">
+      <div className="flex items-center justify-between h-16 sm:h-20 px-3 sm:px-5 lg:px-8 max-w-7xl mx-auto">
         {/* Logo */}
         <Link to="/" onClick={handleLogoTap} className="flex items-center gap-3 group">
           {logoUrl ? (
@@ -54,7 +54,7 @@ export const Header = () => {
               <img 
                 src={logoUrl} 
                 alt={storeName} 
-                className="h-12 w-auto object-contain relative z-10"
+                className="h-10 sm:h-12 w-auto object-contain relative z-10"
               />
               <motion.div 
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"
@@ -62,7 +62,7 @@ export const Header = () => {
             </motion.div>
           ) : (
             <motion.span 
-              className="relative text-xl font-bold tracking-tight overflow-hidden"
+              className="relative text-lg sm:text-xl font-bold tracking-tight overflow-hidden"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -91,31 +91,31 @@ export const Header = () => {
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {canInstall && (
             <Link
               to="/install"
-              className="hidden md:flex p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
+              className="hidden md:flex p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
             >
-              <Download className="w-6 h-6" />
+              <Download className="w-5 h-5 sm:w-6 sm:h-6" />
             </Link>
           )}
           
           <Link
             to="/search"
-            className="p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
+            className="p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
           >
-            <Search className="w-6 h-6" />
+            <Search className="w-5 h-5 sm:w-6 sm:h-6" />
           </Link>
 
           <Link
             to="/notifications"
-            className="relative p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
+            className="relative p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
           >
-            <Bell className="w-6 h-6" />
+            <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
             {unreadCount > 0 && (
               <motion.span 
-                className="absolute top-1.5 right-1.5 w-3 h-3 bg-gradient-to-br from-primary to-primary/80 rounded-full ring-2 ring-background shadow-lg shadow-primary/40"
+                className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gradient-to-br from-primary to-primary/80 rounded-full ring-2 ring-background shadow-lg shadow-primary/40"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 500 }}
@@ -125,12 +125,12 @@ export const Header = () => {
 
           <Link
             to="/cart"
-            className="relative p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
+            className="relative p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
           >
-            <ShoppingBag className="w-6 h-6" />
+            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
             {itemCount > 0 && (
               <motion.span 
-                className="absolute -top-0.5 -right-0.5 w-6 h-6 flex items-center justify-center text-xs font-bold bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-full shadow-lg shadow-primary/30 ring-2 ring-background"
+                className="absolute -top-0.5 -right-0.5 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[10px] sm:text-xs font-bold bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-full shadow-lg shadow-primary/30 ring-2 ring-background"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 500 }}
@@ -144,10 +144,10 @@ export const Header = () => {
           {/* Mobile Menu Toggle */}
           <motion.button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-3 rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
+            className="md:hidden p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-primary/10 transition-all duration-200 text-muted-foreground hover:text-primary"
             whileTap={{ scale: 0.9 }}
           >
-            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {menuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </motion.button>
         </div>
       </div>
@@ -155,7 +155,7 @@ export const Header = () => {
       {/* Mobile Menu */}
       {menuOpen && (
         <motion.div 
-          className="md:hidden absolute top-20 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border"
+          className="md:hidden absolute top-16 sm:top-20 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border z-50"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}

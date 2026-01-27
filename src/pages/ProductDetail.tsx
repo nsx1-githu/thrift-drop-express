@@ -185,14 +185,14 @@ const ProductDetail = () => {
       </div>
 
       {/* Product Info */}
-      <div className="px-6 py-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <p className="section-title mb-2">{product.brand}</p>
-          <h1 className="heading-lg mb-4">{product.name}</h1>
+          <p className="section-title mb-1 sm:mb-2">{product.brand}</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-3 sm:mb-4">{product.name}</h1>
         </motion.div>
 
         {/* Price */}
@@ -287,7 +287,7 @@ const ProductDetail = () => {
 
       {/* Fixed Bottom CTA */}
       <motion.div 
-        className="fixed bottom-20 md:bottom-0 left-0 right-0 p-5 bg-background/80 backdrop-blur-xl border-t border-border/50"
+        className="fixed bottom-16 md:bottom-0 left-0 right-0 p-4 sm:p-5 bg-background/80 backdrop-blur-xl border-t border-border/50"
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ delay: 0.4, type: 'spring', stiffness: 100, damping: 20 }}

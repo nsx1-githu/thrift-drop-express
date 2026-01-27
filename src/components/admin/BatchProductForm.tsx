@@ -264,17 +264,17 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
   };
 
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="min-h-screen bg-background pb-28">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
+        <div className="flex items-center justify-between px-4 lg:px-8 h-14">
           <div className="flex items-center gap-3">
             <button onClick={onClose} className="p-1">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-semibold">Add Multiple Products</h1>
+            <h1 className="font-semibold text-sm sm:text-base">Add Multiple Products</h1>
           </div>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs sm:text-sm text-muted-foreground">
             {products.length} product{products.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -550,7 +550,7 @@ export const BatchProductForm = ({ onClose, onSuccess }: BatchProductFormProps) 
       </form>
 
       {/* Fixed Submit Button */}
-      <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-10">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border z-10">
         <Button
           type="submit"
           onClick={handleSubmit}

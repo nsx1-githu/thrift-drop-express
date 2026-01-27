@@ -55,14 +55,14 @@ const Cart = () => {
   }
 
   return (
-    <PageTransition className="min-h-screen pb-52">
-      <div className="px-6 py-6">
+    <PageTransition className="min-h-screen pb-52 md:pb-44">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <p className="section-title mb-2">Shopping</p>
-          <h1 className="heading-md mb-6">Your Cart</h1>
+          <p className="section-title mb-1 sm:mb-2">Shopping</p>
+          <h1 className="heading-md mb-4 sm:mb-6">Your Cart</h1>
         </motion.div>
 
         {/* Cart Items */}
@@ -138,7 +138,7 @@ const Cart = () => {
 
       {/* Order Summary - Fixed Bottom */}
       <motion.div 
-        className="fixed bottom-20 md:bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border/50 p-5"
+        className="fixed bottom-16 md:bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border/50 p-4 sm:p-5"
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ delay: 0.3, type: 'spring', stiffness: 100, damping: 20 }}
