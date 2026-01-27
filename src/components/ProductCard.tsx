@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
 import { Product } from '@/types/product';
+import { useProductAvailability } from '@/hooks/useProductAvailability';
 
 interface ProductCardProps {
   product: Product;
@@ -44,6 +45,12 @@ const glowVariants: Variants = {
 };
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  // Real-time availability check
+  const { isAvailable } = useProductAvailability(product.id);
+  
+  // Product is sold if either the prop says so OR real-time check says unavailable
+  const isSoldOut = product.soldOut || isAvailable === false;
+  
   const discount = product.originalPrice 
     ? Math.round((1 - product.price / product.originalPrice) * 100)
     : 0;
@@ -82,7 +89,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             transition={{ duration: 0.4 }}
           />
           
-          {product.soldOut && (
+          {isSoldOut && (
             <div className="sold-out-overlay rounded-t-[1.5rem]">
               <span className="sold-out-text">Sold Out</span>
             </div>
@@ -90,7 +97,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
 
           {/* Badges Container */}
           <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-            {!product.soldOut && discount > 0 && (
+            {!isSoldOut && discount > 0 && (
               <motion.span 
                 className="px-3 py-1.5 text-xs font-semibold bg-accent text-accent-foreground rounded-full"
                 initial={{ opacity: 0, scale: 0.8 }}
