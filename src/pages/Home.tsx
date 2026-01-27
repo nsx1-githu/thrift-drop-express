@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Leaf, Sparkles, Heart, Recycle } from 'lucide-react';
+import { ArrowRight, Leaf, Sparkles, Heart, Recycle, Eye } from 'lucide-react';
+import { HighlightsCarousel } from '@/components/HighlightsCarousel';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category } from '@/types/product';
@@ -118,7 +119,7 @@ const Home = () => {
         </motion.div>
       </section>
 
-      {/* Latest Drops */}
+      {/* Highlights Section */}
       <section className="px-6 py-12 border-t border-border">
         <motion.div 
           className="flex items-end justify-between mb-8"
@@ -126,8 +127,9 @@ const Home = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <div>
-            <h2 className="text-2xl md:text-3xl text-foreground">New this drop</h2>
+          <div className="flex items-center gap-3">
+            <Eye className="w-5 h-5 text-primary" />
+            <h2 className="text-2xl md:text-3xl text-foreground">Highlights</h2>
           </div>
           <Link to="/products" className="text-sm uppercase tracking-wider text-foreground hover:text-muted-foreground transition-colors flex items-center gap-2">
             View All
@@ -135,21 +137,10 @@ const Home = () => {
           </Link>
         </motion.div>
         
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-muted aspect-[3/4] animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <StaggerWrapper className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            {latestDrops.map((product) => (
-              <StaggerItem key={product.id}>
-                <ProductCard product={product} />
-              </StaggerItem>
-            ))}
-          </StaggerWrapper>
-        )}
+        <HighlightsCarousel 
+          products={latestDrops} 
+          isLoading={isLoading} 
+        />
       </section>
 
       {/* Browse by Category */}
