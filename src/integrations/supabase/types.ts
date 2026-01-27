@@ -16,18 +16,22 @@ export type Database = {
     Tables: {
       orders: {
         Row: {
+          area: string | null
+          city: string | null
           created_at: string
           customer_address: string
           customer_name: string
           customer_phone: string
           id: string
           items: Json
+          landmark: string | null
           order_id: string
           order_number: number
           payment_method: string
           payment_payer_name: string | null
           payment_proof_url: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
+          pincode: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           refund_note: string | null
@@ -35,23 +39,28 @@ export type Database = {
           refund_status: string
           refunded_at: string | null
           shipping: number
+          state: string | null
           subtotal: number
           total: number
           updated_at: string
         }
         Insert: {
+          area?: string | null
+          city?: string | null
           created_at?: string
           customer_address: string
           customer_name: string
           customer_phone: string
           id?: string
           items: Json
+          landmark?: string | null
           order_id: string
           order_number?: number
           payment_method: string
           payment_payer_name?: string | null
           payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          pincode?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           refund_note?: string | null
@@ -59,23 +68,28 @@ export type Database = {
           refund_status?: string
           refunded_at?: string | null
           shipping?: number
+          state?: string | null
           subtotal: number
           total: number
           updated_at?: string
         }
         Update: {
+          area?: string | null
+          city?: string | null
           created_at?: string
           customer_address?: string
           customer_name?: string
           customer_phone?: string
           id?: string
           items?: Json
+          landmark?: string | null
           order_id?: string
           order_number?: number
           payment_method?: string
           payment_payer_name?: string | null
           payment_proof_url?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          pincode?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           refund_note?: string | null
@@ -83,6 +97,7 @@ export type Database = {
           refund_status?: string
           refunded_at?: string | null
           shipping?: number
+          state?: string | null
           subtotal?: number
           total?: number
           updated_at?: string

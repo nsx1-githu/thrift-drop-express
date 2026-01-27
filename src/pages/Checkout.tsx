@@ -23,7 +23,11 @@ const Checkout = () => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    address: '',
+    pincode: '',
+    state: '',
+    city: '',
+    area: '',
+    landmark: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -92,10 +96,17 @@ const Checkout = () => {
     } else if (!/^[6-9]\d{9}$/.test(formData.phone.trim())) {
       newErrors.phone = 'Enter a valid 10-digit phone number';
     }
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    } else if (formData.address.trim().length < 20) {
-      newErrors.address = 'Please enter a complete address';
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = 'Pincode is required';
+    } else if (!/^\d{6}$/.test(formData.pincode.trim())) {
+      newErrors.pincode = 'Enter a valid 6-digit pincode';
+    }
+    if (!formData.state.trim()) newErrors.state = 'State is required';
+    if (!formData.city.trim()) newErrors.city = 'City is required';
+    if (!formData.area.trim()) {
+      newErrors.area = 'Area/Locality is required';
+    } else if (formData.area.trim().length < 5) {
+      newErrors.area = 'Please enter a complete address';
     }
     if (!upiRefNumber.trim()) {
       newErrors.upiRef = 'UPI reference number is required';
@@ -159,11 +170,25 @@ const Checkout = () => {
         image: item.product.images[0],
       }));
 
+      // Build full address from parts
+      const fullAddress = [
+        formData.area.trim(),
+        formData.landmark.trim() ? `Near ${formData.landmark.trim()}` : '',
+        formData.city.trim(),
+        formData.state.trim(),
+        formData.pincode.trim(),
+      ].filter(Boolean).join(', ');
+
       const { data, error } = await supabase.functions.invoke('create-order', {
         body: {
           customer_name: formData.name.trim(),
           customer_phone: formData.phone.trim(),
-          customer_address: formData.address.trim(),
+          customer_address: fullAddress,
+          pincode: formData.pincode.trim(),
+          state: formData.state.trim(),
+          city: formData.city.trim(),
+          area: formData.area.trim(),
+          landmark: formData.landmark.trim() || null,
           items: orderItems,
           subtotal: total,
           shipping: Math.round(shippingCost),
@@ -287,17 +312,66 @@ const Checkout = () => {
               />
               {errors.phone && <p className="text-xs text-destructive mt-2">{errors.phone}</p>}
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <input
+                  type="text"
+                  name="pincode"
+                  value={formData.pincode}
+                  onChange={handleChange}
+                  placeholder="Pincode"
+                  maxLength={6}
+                  className={`input-field ${errors.pincode ? 'border-destructive focus:border-destructive' : ''}`}
+                />
+                {errors.pincode && <p className="text-xs text-destructive mt-2">{errors.pincode}</p>}
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  placeholder="State"
+                  className={`input-field ${errors.state ? 'border-destructive focus:border-destructive' : ''}`}
+                />
+                {errors.state && <p className="text-xs text-destructive mt-2">{errors.state}</p>}
+              </div>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                placeholder="City"
+                className={`input-field ${errors.city ? 'border-destructive focus:border-destructive' : ''}`}
+              />
+              {errors.city && <p className="text-xs text-destructive mt-2">{errors.city}</p>}
+            </div>
             
             <div>
               <textarea
-                name="address"
-                value={formData.address}
+                name="area"
+                value={formData.area}
                 onChange={handleChange}
-                placeholder="Complete Address (House/Flat, Street, City, State, Pincode)"
-                rows={3}
-                className={`input-field resize-none ${errors.address ? 'border-destructive focus:border-destructive' : ''}`}
+                placeholder="Area / Locality / House No. / Street"
+                rows={2}
+                className={`input-field resize-none ${errors.area ? 'border-destructive focus:border-destructive' : ''}`}
               />
-              {errors.address && <p className="text-xs text-destructive mt-2">{errors.address}</p>}
+              {errors.area && <p className="text-xs text-destructive mt-2">{errors.area}</p>}
+            </div>
+
+            <div>
+              <input
+                type="text"
+                name="landmark"
+                value={formData.landmark}
+                onChange={handleChange}
+                placeholder="Landmark (optional)"
+                className="input-field"
+              />
             </div>
           </div>
         </section>

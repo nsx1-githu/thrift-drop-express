@@ -54,6 +54,11 @@ type CreateOrderPayload = {
   customer_name: string;
   customer_phone: string;
   customer_address: string;
+  pincode?: string;
+  state?: string;
+  city?: string;
+  area?: string;
+  landmark?: string | null;
   items: OrderItem[];
   subtotal: number;
   shipping: number;
@@ -98,6 +103,11 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
   const customer_name = asTrimmedString(p.customer_name);
   const customer_phone = asTrimmedString(p.customer_phone);
   const customer_address = asTrimmedString(p.customer_address);
+  const pincode = asTrimmedString(p.pincode);
+  const state = asTrimmedString(p.state);
+  const city = asTrimmedString(p.city);
+  const area = asTrimmedString(p.area);
+  const landmark = asTrimmedString(p.landmark);
   const payment_reference = asTrimmedString(p.payment_reference);
   const payment_method = asTrimmedString(p.payment_method);
   const payment_payer_name = asTrimmedString(p.payment_payer_name);
@@ -110,8 +120,24 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
   if (!customer_phone || !/^[6-9]\d{9}$/.test(customer_phone)) {
     return { ok: false, error: "Invalid phone" };
   }
-  if (!customer_address || customer_address.length < 20 || customer_address.length > 500) {
+  if (!customer_address || customer_address.length < 10 || customer_address.length > 500) {
     return { ok: false, error: "Invalid address" };
+  }
+  // Validate new address fields
+  if (pincode && !/^\d{6}$/.test(pincode)) {
+    return { ok: false, error: "Invalid pincode" };
+  }
+  if (state && state.length > 50) {
+    return { ok: false, error: "Invalid state" };
+  }
+  if (city && city.length > 100) {
+    return { ok: false, error: "Invalid city" };
+  }
+  if (area && area.length > 300) {
+    return { ok: false, error: "Invalid area" };
+  }
+  if (landmark && landmark.length > 200) {
+    return { ok: false, error: "Invalid landmark" };
   }
   if (!payment_reference || payment_reference.length < 8 || payment_reference.length > 64) {
     return { ok: false, error: "Invalid payment reference" };
@@ -168,6 +194,11 @@ function validatePayload(payload: unknown): { ok: true; data: CreateOrderPayload
       customer_name,
       customer_phone,
       customer_address,
+      pincode: pincode ?? undefined,
+      state: state ?? undefined,
+      city: city ?? undefined,
+      area: area ?? undefined,
+      landmark: landmark ?? null,
       items,
       subtotal,
       shipping,
@@ -253,6 +284,11 @@ Deno.serve(async (req) => {
       customer_name: order.customer_name,
       customer_phone: order.customer_phone,
       customer_address: order.customer_address,
+      pincode: order.pincode ?? null,
+      state: order.state ?? null,
+      city: order.city ?? null,
+      area: order.area ?? null,
+      landmark: order.landmark ?? null,
       items: order.items,
       subtotal: order.subtotal,
       shipping: order.shipping,
