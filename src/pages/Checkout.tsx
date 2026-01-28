@@ -250,7 +250,7 @@ const Checkout = () => {
     }
   };
 
-  // Step 2: Submit payment details
+  // Step 2: Submit payment details via edge function (server-side upload)
   const handleSubmitPayment = async () => {
     if (!reservation) {
       toast.error('No active reservation');
@@ -265,7 +265,7 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Convert payment proof to base64
+      // Convert payment proof to base64 for server-side upload
       let paymentProofBase64 = '';
       if (paymentProof) {
         const arrayBuffer = await paymentProof.arrayBuffer();
@@ -277,42 +277,22 @@ const Checkout = () => {
         paymentProofBase64 = btoa(binary);
       }
 
-      // Upload payment proof to storage
-      const fileName = `payment-proofs/${reservation.orderId}-${Date.now()}.${paymentProof?.type.split('/')[1] || 'png'}`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(fileName, paymentProof!, {
-          contentType: paymentProof?.type,
-          upsert: true,
-        });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload payment screenshot');
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(fileName);
-
-      const paymentProofUrl = urlData.publicUrl;
-
-      // Submit payment via RPC
-      const { data, error } = await supabase.rpc('submit_order_payment', {
-        _order_id: reservation.orderId,
-        _customer_phone: formData.phone.trim(),
-        _payment_reference: upiRefNumber.trim(),
-        _payment_payer_name: paymentPayerName.trim(),
-        _payment_proof_url: paymentProofUrl,
+      // Submit payment via edge function (handles server-side image upload)
+      const { data, error } = await supabase.functions.invoke('submit-payment', {
+        body: {
+          order_id: reservation.orderId,
+          customer_phone: formData.phone.trim(),
+          payment_reference: upiRefNumber.trim(),
+          payment_payer_name: paymentPayerName.trim(),
+          payment_proof_base64: paymentProofBase64,
+          payment_proof_mime: paymentProof?.type,
+        },
       });
 
       if (error) throw error;
 
-      const result = data?.[0];
-      
-      if (!result?.success) {
-        throw new Error(result?.error_message || 'Failed to submit payment');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to submit payment');
       }
 
       // Success!
