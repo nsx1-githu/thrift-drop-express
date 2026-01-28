@@ -121,20 +121,18 @@ Deno.serve(async (req) => {
           'image/gif': 'gif',
         };
         const ext = extMap[data.payment_proof_mime.toLowerCase()] || 'jpg';
-        const path = `payments/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        const path = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
         
         const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(path, bytes, { 
+          .from('payment-proofs')
+          .upload(path, bytes, {
             contentType: data.payment_proof_mime, 
             upsert: false 
           });
         
         if (!uploadError) {
-          const { data: urlData } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(path);
-          paymentProofUrl = urlData.publicUrl;
+          // Store the path reference - admin will access via signed URL
+          paymentProofUrl = `payment-proofs/${path}`;
         } else {
           console.error('Payment proof upload error:', uploadError);
           // Continue without failing - payment can be verified manually

@@ -55,7 +55,51 @@ export const OrdersPanel = () => {
   const [cleanupStatuses, setCleanupStatuses] = useState<string[]>(['verified', 'failed', 'paid', 'cancelled', 'expired']);
   const [isDeleting, setIsDeleting] = useState(false);
   const [ordersToDelete, setOrdersToDelete] = useState<Order[]>([]);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
+  // Get signed URL for payment proof stored in private bucket
+  const getPaymentProofUrl = async (proofUrl: string | null | undefined): Promise<string | null> => {
+    if (!proofUrl) return null;
+    
+    // Check if it's already a signed URL or public URL (legacy)
+    if (proofUrl.startsWith('http')) return proofUrl;
+    
+    // Extract path from the stored reference (format: payment-proofs/filename.ext)
+    const match = proofUrl.match(/^payment-proofs\/(.+)$/);
+    if (!match) return null;
+    
+    const path = match[1];
+    
+    // Generate signed URL with 1 hour expiry
+    const { data, error } = await supabase.storage
+      .from('payment-proofs')
+      .createSignedUrl(path, 3600); // 1 hour
+    
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
+    
+    return data.signedUrl;
+  };
+
+  // Fetch signed URLs for visible orders with payment proofs
+  const fetchSignedUrls = async (ordersToFetch: Order[]) => {
+    const newUrls: Record<string, string> = {};
+    
+    for (const order of ordersToFetch) {
+      if (order.payment_proof_url && !signedUrls[order.id]) {
+        const url = await getPaymentProofUrl(order.payment_proof_url);
+        if (url) {
+          newUrls[order.id] = url;
+        }
+      }
+    }
+    
+    if (Object.keys(newUrls).length > 0) {
+      setSignedUrls(prev => ({ ...prev, ...newUrls }));
+    }
+  };
   const copyText = async (text: string, label: string) => {
     const value = (text ?? '').trim();
     if (!value) {
@@ -682,14 +726,31 @@ export const OrdersPanel = () => {
                       <div className="rounded-md border border-border bg-muted/30 p-2">
                         <p className="text-[11px] text-muted-foreground">Screenshot</p>
                         {order.payment_proof_url ? (
-                          <a
-                            href={order.payment_proof_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm underline text-primary"
-                          >
-                            View screenshot
-                          </a>
+                          signedUrls[order.id] ? (
+                            <a
+                              href={signedUrls[order.id]}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm underline text-primary"
+                            >
+                              View screenshot
+                            </a>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                const url = await getPaymentProofUrl(order.payment_proof_url);
+                                if (url) {
+                                  setSignedUrls(prev => ({ ...prev, [order.id]: url }));
+                                  window.open(url, '_blank');
+                                } else {
+                                  toast.error('Failed to load payment proof');
+                                }
+                              }}
+                              className="text-sm underline text-primary"
+                            >
+                              Load screenshot
+                            </button>
+                          )
                         ) : (
                           <p className="text-sm">Not provided</p>
                         )}
