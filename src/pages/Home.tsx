@@ -57,44 +57,35 @@ const Home = () => {
 
   return (
     <PageTransition className="min-h-screen pb-8">
-      {/* Owner Hero Section */}
-      <section className="relative w-full min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center overflow-hidden">
-        {/* Background Image */}
+      {/* Owner Hero Section - Full Screen */}
+      <section className="relative w-full h-[100svh] flex items-end justify-center overflow-hidden">
+        {/* Full Screen Background Image */}
         {ownerImage ? (
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${ownerImage})` }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
-          </div>
+          />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-background">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-accent/20 to-muted">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <User className="w-32 h-32 sm:w-48 sm:h-48 text-foreground/10" strokeWidth={0.5} />
+            </div>
           </div>
         )}
         
-        {/* Content */}
+        {/* Gradient Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        
+        {/* Content at Bottom */}
         <motion.div 
-          className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto"
+          className="relative z-10 text-center px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 md:pb-20 max-w-3xl mx-auto"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Owner Icon/Avatar Placeholder */}
-          {!ownerImage && (
-            <motion.div 
-              className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-            >
-              <User className="w-10 h-10 sm:w-12 sm:h-12 text-primary" strokeWidth={1.5} />
-            </motion.div>
-          )}
-          
           {/* Owner Name */}
           <motion.h1 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-normal mb-4 sm:mb-6 text-foreground drop-shadow-sm"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-normal mb-3 sm:mb-4 text-foreground"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
@@ -104,13 +95,28 @@ const Home = () => {
           
           {/* Owner Bio */}
           <motion.p 
-            className="text-base sm:text-lg md:text-xl text-foreground/80 leading-relaxed max-w-xl mx-auto drop-shadow-sm"
+            className="text-sm sm:text-base md:text-lg text-foreground/80 leading-relaxed max-w-lg mx-auto"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.4 }}
           >
             {ownerBio}
           </motion.p>
+        </motion.div>
+        
+        {/* Scroll Indicator */}
+        <motion.div 
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 8, 0] }}
+          transition={{ 
+            opacity: { delay: 1, duration: 0.5 },
+            y: { delay: 1, duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+          }}
+        >
+          <div className="w-6 h-10 rounded-full border-2 border-foreground/30 flex items-start justify-center p-2">
+            <div className="w-1.5 h-2.5 rounded-full bg-foreground/50" />
+          </div>
         </motion.div>
       </section>
 
