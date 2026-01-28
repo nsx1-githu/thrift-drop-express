@@ -30,7 +30,6 @@ const DEFAULTS: Record<string, string> = {
   content_sold_out_label: 'Sold Out',
   content_featured_label: 'Featured',
   content_add_to_cart_button: 'Add to Cart',
-  content_owner_title: 'Founder & Curator',
 };
 
 export function useSiteContent() {
