@@ -33,10 +33,12 @@ interface Order {
   shipping: number;
   total: number;
   payment_method: string;
-  payment_status: 'pending' | 'verified' | 'failed';
+  payment_status: 'pending' | 'verified' | 'failed' | 'locked' | 'payment_submitted' | 'paid' | 'cancelled' | 'expired';
   razorpay_payment_id: string | null;
   payment_payer_name?: string | null;
   payment_proof_url?: string | null;
+  reservation_expires_at?: string | null;
+  locked_product_ids?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -260,7 +262,12 @@ export const OrdersPanel = () => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />;
       case 'verified': return <CheckCircle className="w-4 h-4" />;
+      case 'paid': return <CheckCircle className="w-4 h-4" />;
       case 'failed': return <XCircle className="w-4 h-4" />;
+      case 'cancelled': return <XCircle className="w-4 h-4" />;
+      case 'expired': return <Clock className="w-4 h-4" />;
+      case 'locked': return <Clock className="w-4 h-4" />;
+      case 'payment_submitted': return <Clock className="w-4 h-4" />;
       default: return <Package className="w-4 h-4" />;
     }
   };
@@ -269,23 +276,29 @@ export const OrdersPanel = () => {
     switch (status) {
       case 'pending': return 'bg-status-pending/10 text-status-pending border-status-pending/20';
       case 'verified': return 'bg-status-verified/10 text-status-verified border-status-verified/20';
+      case 'paid': return 'bg-status-verified/10 text-status-verified border-status-verified/20';
       case 'failed': return 'bg-status-failed/10 text-status-failed border-status-failed/20';
+      case 'cancelled': return 'bg-status-failed/10 text-status-failed border-status-failed/20';
+      case 'expired': return 'bg-muted text-muted-foreground border-muted';
+      case 'locked': return 'bg-primary/10 text-primary border-primary/20';
+      case 'payment_submitted': return 'bg-status-pending/10 text-status-pending border-status-pending/20';
       default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const stats = {
     total: orders.length,
-    pending: orders.filter(o => o.payment_status === 'pending').length,
-    verified: orders.filter(o => o.payment_status === 'verified').length,
-    failed: orders.filter(o => o.payment_status === 'failed').length,
+    pending: orders.filter(o => o.payment_status === 'pending' || o.payment_status === 'payment_submitted').length,
+    locked: orders.filter(o => o.payment_status === 'locked').length,
+    verified: orders.filter(o => o.payment_status === 'verified' || o.payment_status === 'paid').length,
+    failed: orders.filter(o => o.payment_status === 'failed' || o.payment_status === 'cancelled' || o.payment_status === 'expired').length,
     highestOrderNumber: orders.length > 0 ? Math.max(...orders.map(o => o.order_number || 0)) : 0,
   };
 
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 text-center">
           <p className="text-xl font-bold text-primary">#{stats.highestOrderNumber}</p>
           <p className="text-xs text-primary/80">Order #</p>
@@ -293,6 +306,10 @@ export const OrdersPanel = () => {
         <div className="p-3 bg-card rounded-lg border border-border text-center">
           <p className="text-xl font-bold">{stats.total}</p>
           <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+        <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 text-center">
+          <p className="text-xl font-bold text-primary">{stats.locked}</p>
+          <p className="text-xs text-primary/80">Reserved</p>
         </div>
         <div className="p-3 bg-status-pending/5 rounded-lg border border-status-pending/20 text-center">
           <p className="text-xl font-bold text-status-pending">{stats.pending}</p>
@@ -321,14 +338,17 @@ export const OrdersPanel = () => {
           />
         </div>
         <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
+            <SelectItem value="locked">Reserved</SelectItem>
+            <SelectItem value="payment_submitted">Submitted</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="verified">Verified</SelectItem>
             <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="icon" onClick={fetchOrders}>
@@ -581,7 +601,7 @@ export const OrdersPanel = () => {
                   </div>
 
                   {/* Actions */}
-                  {order.payment_status === 'pending' && (
+                  {(order.payment_status === 'pending' || order.payment_status === 'payment_submitted') && (
                     <div className="flex gap-2 pt-2">
                       <Button 
                         onClick={() => updateOrderStatus(order.id, 'verified')}
@@ -597,6 +617,28 @@ export const OrdersPanel = () => {
                       >
                         <XCircle className="w-4 h-4 mr-1" />
                          Reject Order
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Locked orders can be cancelled */}
+                  {order.payment_status === 'locked' && (
+                    <div className="flex gap-2 pt-2">
+                      <div className="flex-1 p-2 bg-primary/10 rounded-lg text-center">
+                        <p className="text-sm text-primary font-medium">Awaiting Payment</p>
+                        {order.reservation_expires_at && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Expires: {new Date(order.reservation_expires_at).toLocaleTimeString()}
+                          </p>
+                        )}
+                      </div>
+                      <Button 
+                        onClick={() => updateOrderStatus(order.id, 'failed')}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Cancel
                       </Button>
                     </div>
                   )}
