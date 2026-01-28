@@ -25,6 +25,7 @@ export type Database = {
           id: string
           items: Json
           landmark: string | null
+          locked_product_ids: string[] | null
           order_id: string
           order_number: number
           payment_method: string
@@ -38,6 +39,8 @@ export type Database = {
           refund_reference: string | null
           refund_status: string
           refunded_at: string | null
+          reservation_expires_at: string | null
+          reserved_at: string | null
           shipping: number
           state: string | null
           subtotal: number
@@ -54,6 +57,7 @@ export type Database = {
           id?: string
           items: Json
           landmark?: string | null
+          locked_product_ids?: string[] | null
           order_id: string
           order_number?: number
           payment_method: string
@@ -67,6 +71,8 @@ export type Database = {
           refund_reference?: string | null
           refund_status?: string
           refunded_at?: string | null
+          reservation_expires_at?: string | null
+          reserved_at?: string | null
           shipping?: number
           state?: string | null
           subtotal: number
@@ -83,6 +89,7 @@ export type Database = {
           id?: string
           items?: Json
           landmark?: string | null
+          locked_product_ids?: string[] | null
           order_id?: string
           order_number?: number
           payment_method?: string
@@ -96,6 +103,8 @@ export type Database = {
           refund_reference?: string | null
           refund_status?: string
           refunded_at?: string | null
+          reservation_expires_at?: string | null
+          reserved_at?: string | null
           shipping?: number
           state?: string | null
           subtotal?: number
@@ -250,7 +259,15 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      payment_status: "pending" | "verified" | "failed"
+      payment_status:
+        | "pending"
+        | "verified"
+        | "failed"
+        | "locked"
+        | "payment_submitted"
+        | "paid"
+        | "cancelled"
+        | "expired"
       product_category:
         | "jackets"
         | "hoodies"
@@ -390,7 +407,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      payment_status: ["pending", "verified", "failed"],
+      payment_status: [
+        "pending",
+        "verified",
+        "failed",
+        "locked",
+        "payment_submitted",
+        "paid",
+        "cancelled",
+        "expired",
+      ],
       product_category: [
         "jackets",
         "hoodies",
