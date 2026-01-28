@@ -25,7 +25,6 @@ export type Database = {
           id: string
           items: Json
           landmark: string | null
-          locked_product_ids: string[] | null
           order_id: string
           order_number: number
           payment_method: string
@@ -39,8 +38,6 @@ export type Database = {
           refund_reference: string | null
           refund_status: string
           refunded_at: string | null
-          reservation_expires_at: string | null
-          reserved_at: string | null
           shipping: number
           state: string | null
           subtotal: number
@@ -57,7 +54,6 @@ export type Database = {
           id?: string
           items: Json
           landmark?: string | null
-          locked_product_ids?: string[] | null
           order_id: string
           order_number?: number
           payment_method: string
@@ -71,8 +67,6 @@ export type Database = {
           refund_reference?: string | null
           refund_status?: string
           refunded_at?: string | null
-          reservation_expires_at?: string | null
-          reserved_at?: string | null
           shipping?: number
           state?: string | null
           subtotal: number
@@ -89,7 +83,6 @@ export type Database = {
           id?: string
           items?: Json
           landmark?: string | null
-          locked_product_ids?: string[] | null
           order_id?: string
           order_number?: number
           payment_method?: string
@@ -103,8 +96,6 @@ export type Database = {
           refund_reference?: string | null
           refund_status?: string
           refunded_at?: string | null
-          reservation_expires_at?: string | null
-          reserved_at?: string | null
           shipping?: number
           state?: string | null
           subtotal?: number
@@ -214,14 +205,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_product_availability_with_locks: {
-        Args: { _product_ids: string[] }
-        Returns: {
-          is_available: boolean
-          is_locked: boolean
-          product_id: string
-        }[]
-      }
       check_products_availability: {
         Args: { _product_ids: string[] }
         Returns: {
@@ -229,31 +212,6 @@ export type Database = {
           product_id: string
         }[]
       }
-      create_order_reservation: {
-        Args: {
-          _area: string
-          _city: string
-          _customer_address: string
-          _customer_name: string
-          _customer_phone: string
-          _items: Json
-          _landmark: string
-          _payment_method: string
-          _pincode: string
-          _product_ids: string[]
-          _shipping: number
-          _state: string
-          _subtotal: number
-          _total: number
-        }
-        Returns: {
-          expires_at: string
-          order_id: string
-          success: boolean
-          unavailable_products: Json
-        }[]
-      }
-      expire_stale_reservations: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -261,7 +219,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_product_locked: { Args: { _product_id: string }; Returns: boolean }
       release_products_from_order: {
         Args: { _product_ids: string[] }
         Returns: undefined
@@ -271,19 +228,6 @@ export type Database = {
         Returns: {
           success: boolean
           unavailable_products: Json
-        }[]
-      }
-      submit_order_payment: {
-        Args: {
-          _customer_phone: string
-          _order_id: string
-          _payment_payer_name: string
-          _payment_proof_url: string
-          _payment_reference: string
-        }
-        Returns: {
-          error_message: string
-          success: boolean
         }[]
       }
       track_order: {
@@ -306,15 +250,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      payment_status:
-        | "pending"
-        | "verified"
-        | "failed"
-        | "locked"
-        | "payment_submitted"
-        | "paid"
-        | "cancelled"
-        | "expired"
+      payment_status: "pending" | "verified" | "failed"
       product_category:
         | "jackets"
         | "hoodies"
@@ -454,16 +390,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      payment_status: [
-        "pending",
-        "verified",
-        "failed",
-        "locked",
-        "payment_submitted",
-        "paid",
-        "cancelled",
-        "expired",
-      ],
+      payment_status: ["pending", "verified", "failed"],
       product_category: [
         "jackets",
         "hoodies",
