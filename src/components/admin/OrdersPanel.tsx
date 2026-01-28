@@ -123,6 +123,87 @@ export const OrdersPanel = () => {
     };
   }, []);
 
+  // Helper function to delete product images from storage
+  const deleteProductImages = async (imageUrls: string[]) => {
+    const BUCKET = 'product-images';
+    const pathsToDelete: string[] = [];
+    
+    for (const url of imageUrls) {
+      // Extract path from URL (e.g., products/1234-abc.webp)
+      const match = url.match(/\/product-images\/(.+)$/);
+      if (match) {
+        pathsToDelete.push(match[1].split('?')[0]); // Remove query params
+      }
+    }
+    
+    if (pathsToDelete.length === 0) return;
+    
+    // Check if any other products use these images
+    const { data: allProducts } = await supabase
+      .from('products')
+      .select('images');
+    
+    const allUsedImages = new Set(
+      (allProducts ?? []).flatMap(p => p.images ?? [])
+    );
+    
+    // Only delete images not used by other products
+    const unusedPaths = pathsToDelete.filter(path => {
+      const fullUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      return !allUsedImages.has(fullUrl);
+    });
+    
+    if (unusedPaths.length > 0) {
+      const { error } = await supabase.storage.from(BUCKET).remove(unusedPaths);
+      if (error) {
+        console.error('Error deleting images:', error);
+      } else {
+        console.log(`Deleted ${unusedPaths.length} unused image(s)`);
+      }
+    }
+  };
+
+  // Helper function to delete a product and its unused images
+  const deleteProductWithImages = async (productId: string) => {
+    try {
+      // First, get the product to retrieve its images
+      const { data: product, error: fetchError } = await supabase
+        .from('products')
+        .select('id, name, images')
+        .eq('id', productId)
+        .maybeSingle();
+      
+      if (fetchError || !product) {
+        console.error('Error fetching product for deletion:', fetchError);
+        return false;
+      }
+      
+      const imagesToCheck = product.images ?? [];
+      
+      // Delete the product first
+      const { error: deleteError } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+      
+      if (deleteError) {
+        console.error('Error deleting product:', deleteError);
+        return false;
+      }
+      
+      // Then delete unused images
+      if (imagesToCheck.length > 0) {
+        await deleteProductImages(imagesToCheck);
+      }
+      
+      console.log(`Product ${product.name} deleted with images cleanup`);
+      return true;
+    } catch (error) {
+      console.error('Error in deleteProductWithImages:', error);
+      return false;
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, status: 'paid' | 'cancelled' | 'verified' | 'failed') => {
     try {
       const order = orders.find(o => o.id === orderId);
@@ -140,21 +221,23 @@ export const OrdersPanel = () => {
         ?? order?.items?.map(item => item.product_id).filter((id): id is string => Boolean(id) && uuidRegex.test(id)) 
         ?? [];
       
-      // If order is approved (paid/verified), ensure products stay marked as sold out
+      // If order is approved (paid/verified), delete products and their unused images
       if ((status === 'paid' || status === 'verified') && productIds.length > 0) {
-        const { error: soldOutError } = await supabase
-          .from('products')
-          .update({ sold_out: true })
-          .in('id', productIds);
+        let deletedCount = 0;
         
-        if (soldOutError) {
-          console.error('Error marking products as sold out:', soldOutError);
-          toast.warning('Order approved, but failed to mark products as sold out');
-        } else {
-          toast.success(`Order approved & ${productIds.length} product(s) marked sold out`);
-          fetchOrders();
-          return;
+        for (const productId of productIds) {
+          const success = await deleteProductWithImages(productId);
+          if (success) deletedCount++;
         }
+        
+        if (deletedCount > 0) {
+          toast.success(`Order approved! ${deletedCount} product(s) sold & removed with images cleanup`);
+        } else {
+          toast.success('Order approved');
+        }
+        
+        fetchOrders();
+        return;
       }
       
       // If order is rejected/cancelled/failed, release products
