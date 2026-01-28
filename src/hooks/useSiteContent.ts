@@ -3,6 +3,11 @@ import { useStoreSettings } from './useStoreSettings';
 
 // Default content values
 const DEFAULTS: Record<string, string> = {
+  // Owner Section
+  content_owner_name: 'The Owner',
+  content_owner_bio: 'Passionate about sustainable fashion and giving pre-loved pieces a second life. Every item is hand-picked with love.',
+  content_owner_image: '',
+  // Hero Section
   content_hero_subtitle: 'Sustainable Fashion',
   content_hero_title: 'What is Thrifting?',
   content_hero_description: "Thrifting is the art of finding pre-loved treasures. It's about giving beautiful pieces a second life while reducing fashion's environmental footprint.",

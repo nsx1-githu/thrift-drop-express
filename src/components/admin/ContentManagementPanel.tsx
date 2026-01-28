@@ -8,6 +8,15 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 
 // Content keys grouped by page/section
 const CONTENT_SCHEMA = {
+  owner: {
+    label: 'Owner Section',
+    icon: '👤',
+    fields: [
+      { key: 'content_owner_name', label: 'Owner Name', placeholder: 'The Owner', type: 'text' },
+      { key: 'content_owner_bio', label: 'Owner Bio (2-3 lines)', placeholder: 'Passionate about sustainable fashion...', type: 'textarea' },
+      { key: 'content_owner_image', label: 'Owner Image URL', placeholder: 'https://...', type: 'text' },
+    ],
+  },
   homepage: {
     label: 'Homepage',
     icon: '🏠',
@@ -25,7 +34,7 @@ const CONTENT_SCHEMA = {
       { key: 'content_benefit_3_desc', label: 'Benefit 3 Description', placeholder: 'Premium brands at a fraction of retail', type: 'text' },
       { key: 'content_benefit_4_title', label: 'Benefit 4 Title', placeholder: 'Circular', type: 'text' },
       { key: 'content_benefit_4_desc', label: 'Benefit 4 Description', placeholder: 'Extend the lifecycle of quality garments', type: 'text' },
-      { key: 'content_highlights_title', label: 'Highlights Section Title', placeholder: 'Highlights', type: 'text' },
+      { key: 'content_highlights_title', label: 'Highlights Section Title', placeholder: 'Latest Drops', type: 'text' },
       { key: 'content_category_title', label: 'Category Section Title', placeholder: 'Shop by Category', type: 'text' },
     ],
   },
@@ -174,7 +183,7 @@ export const ContentManagementPanel = () => {
       </p>
 
       {/* Content Sections */}
-      <Accordion type="multiple" defaultValue={['homepage']} className="space-y-2">
+      <Accordion type="multiple" defaultValue={['owner', 'homepage']} className="space-y-2">
         {Object.entries(CONTENT_SCHEMA).map(([sectionKey, section]) => (
           <AccordionItem
             key={sectionKey}

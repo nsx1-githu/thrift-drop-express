@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Leaf, Sparkles, Heart, Recycle, Eye } from 'lucide-react';
+import { ArrowRight, Leaf, Sparkles, Heart, Recycle, Eye, User } from 'lucide-react';
 import { HighlightsCarousel } from '@/components/HighlightsCarousel';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
@@ -50,8 +50,70 @@ const Home = () => {
     }
   ];
 
+  // Owner section content
+  const ownerName = getContent('content_owner_name');
+  const ownerBio = getContent('content_owner_bio');
+  const ownerImage = getContent('content_owner_image');
+
   return (
     <PageTransition className="min-h-screen pb-8">
+      {/* Owner Hero Section */}
+      <section className="relative w-full min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        {ownerImage ? (
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${ownerImage})` }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-background">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+          </div>
+        )}
+        
+        {/* Content */}
+        <motion.div 
+          className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Owner Icon/Avatar Placeholder */}
+          {!ownerImage && (
+            <motion.div 
+              className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <User className="w-10 h-10 sm:w-12 sm:h-12 text-primary" strokeWidth={1.5} />
+            </motion.div>
+          )}
+          
+          {/* Owner Name */}
+          <motion.h1 
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-normal mb-4 sm:mb-6 text-foreground drop-shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            {ownerName}
+          </motion.h1>
+          
+          {/* Owner Bio */}
+          <motion.p 
+            className="text-base sm:text-lg md:text-xl text-foreground/80 leading-relaxed max-w-xl mx-auto drop-shadow-sm"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.4 }}
+          >
+            {ownerBio}
+          </motion.p>
+        </motion.div>
+      </section>
+
       {/* Hero Section - About Thrifting */}
       <section className="relative px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16 md:pt-20 md:pb-24">
         <div className="max-w-2xl mx-auto text-center">
