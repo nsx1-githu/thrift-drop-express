@@ -51,7 +51,7 @@ const Home = () => {
   ];
 
   return (
-    <PageTransition className="min-h-screen pb-28 md:pb-8">
+    <PageTransition className="min-h-screen pb-8">
       {/* Hero Section - About Thrifting */}
       <section className="relative px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16 md:pt-20 md:pb-24">
         <div className="max-w-2xl mx-auto text-center">

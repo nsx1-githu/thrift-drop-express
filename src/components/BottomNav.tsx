@@ -49,12 +49,12 @@ export const BottomNav = () => {
 
   return (
     <motion.nav 
-      className="fixed bottom-4 left-4 right-4 z-50 md:hidden"
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
+      className="sticky top-16 sm:top-20 z-30 md:hidden bg-background/95 backdrop-blur-xl border-b border-border/50"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.3, ease: 'easeOut' }}
     >
-      <div className="bg-card/80 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl shadow-primary/10 px-2 py-2">
+      <div className="px-2 py-2 max-w-7xl mx-auto">
         <div className="flex items-center justify-around">
           {navItems.map((item) => {
             const isActive = location.pathname === item.to;
