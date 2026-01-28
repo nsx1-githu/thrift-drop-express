@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, Package, Search, RefreshCw, Phone, Copy, Trash2, AlertTriangle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Package, Search, RefreshCw, Phone, Copy, Trash2, AlertTriangle, Lock, CreditCard, Timer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -33,10 +33,13 @@ interface Order {
   shipping: number;
   total: number;
   payment_method: string;
-  payment_status: 'pending' | 'verified' | 'failed';
+  payment_status: 'pending' | 'verified' | 'failed' | 'locked' | 'payment_submitted' | 'paid' | 'cancelled' | 'expired';
   razorpay_payment_id: string | null;
   payment_payer_name?: string | null;
   payment_proof_url?: string | null;
+  reserved_at?: string | null;
+  reservation_expires_at?: string | null;
+  locked_product_ids?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +52,7 @@ export const OrdersPanel = () => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [showCleanupModal, setShowCleanupModal] = useState(false);
   const [cleanupDays, setCleanupDays] = useState(90);
-  const [cleanupStatuses, setCleanupStatuses] = useState<string[]>(['verified', 'failed']);
+  const [cleanupStatuses, setCleanupStatuses] = useState<string[]>(['verified', 'failed', 'paid', 'cancelled', 'expired']);
   const [isDeleting, setIsDeleting] = useState(false);
   const [ordersToDelete, setOrdersToDelete] = useState<Order[]>([]);
 
@@ -120,9 +123,8 @@ export const OrdersPanel = () => {
     };
   }, []);
 
-  const updateOrderStatus = async (orderId: string, status: 'verified' | 'failed') => {
+  const updateOrderStatus = async (orderId: string, status: 'paid' | 'cancelled' | 'verified' | 'failed') => {
     try {
-      // Find the order to get product IDs
       const order = orders.find(o => o.id === orderId);
       
       const { error } = await supabase
@@ -132,14 +134,14 @@ export const OrdersPanel = () => {
 
       if (error) throw error;
 
-      // Get product IDs from order items (filter to valid UUIDs only)
+      // Get product IDs from locked_product_ids or order items
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      const productIds = order?.items
-        ?.map(item => item.product_id)
-        .filter((id): id is string => Boolean(id) && uuidRegex.test(id)) ?? [];
+      const productIds = order?.locked_product_ids?.filter((id): id is string => Boolean(id) && uuidRegex.test(id)) 
+        ?? order?.items?.map(item => item.product_id).filter((id): id is string => Boolean(id) && uuidRegex.test(id)) 
+        ?? [];
       
-      // If order is verified, ensure products are marked as sold out
-      if (status === 'verified' && productIds.length > 0) {
+      // If order is approved (paid/verified), ensure products stay marked as sold out
+      if ((status === 'paid' || status === 'verified') && productIds.length > 0) {
         const { error: soldOutError } = await supabase
           .from('products')
           .update({ sold_out: true })
@@ -147,23 +149,23 @@ export const OrdersPanel = () => {
         
         if (soldOutError) {
           console.error('Error marking products as sold out:', soldOutError);
-          toast.warning('Order verified, but failed to mark products as sold out');
+          toast.warning('Order approved, but failed to mark products as sold out');
         } else {
-          toast.success(`Order verified & ${productIds.length} product(s) marked sold out`);
+          toast.success(`Order approved & ${productIds.length} product(s) marked sold out`);
           fetchOrders();
           return;
         }
       }
       
-      // If order is rejected/failed, unmark products as sold out so they can be ordered again
-      if (status === 'failed' && productIds.length > 0) {
-        const { error: unmarkError } = await supabase
-          .from('products')
-          .update({ sold_out: false })
-          .in('id', productIds);
+      // If order is rejected/cancelled/failed, release products
+      if ((status === 'cancelled' || status === 'failed') && productIds.length > 0) {
+        // Use the RPC function to release products
+        const { error: releaseError } = await supabase.rpc('release_products_from_order', {
+          _product_ids: productIds
+        });
         
-        if (unmarkError) {
-          console.error('Error unmarking products:', unmarkError);
+        if (releaseError) {
+          console.error('Error releasing products:', releaseError);
           toast.warning('Order rejected, but failed to restore product availability');
         } else {
           toast.success(`Order rejected & ${productIds.length} product(s) restored to available`);
@@ -199,7 +201,6 @@ export const OrdersPanel = () => {
       return;
     }
     
-    // Directly delete without confirmation step
     setIsDeleting(true);
     try {
       const ids = toDelete.map(o => o.id);
@@ -259,8 +260,13 @@ export const OrdersPanel = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />;
+      case 'locked': return <Lock className="w-4 h-4" />;
+      case 'payment_submitted': return <CreditCard className="w-4 h-4" />;
+      case 'paid':
       case 'verified': return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled':
       case 'failed': return <XCircle className="w-4 h-4" />;
+      case 'expired': return <Timer className="w-4 h-4" />;
       default: return <Package className="w-4 h-4" />;
     }
   };
@@ -268,24 +274,51 @@ export const OrdersPanel = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-status-pending/10 text-status-pending border-status-pending/20';
+      case 'locked': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+      case 'payment_submitted': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+      case 'paid':
       case 'verified': return 'bg-status-verified/10 text-status-verified border-status-verified/20';
+      case 'cancelled':
       case 'failed': return 'bg-status-failed/10 text-status-failed border-status-failed/20';
+      case 'expired': return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
       default: return 'bg-muted text-muted-foreground';
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'payment_submitted': return 'Payment Submitted';
+      case 'locked': return 'Reserved';
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
+  // Calculate time remaining for locked orders
+  const getTimeRemaining = (expiresAt: string | null | undefined) => {
+    if (!expiresAt) return null;
+    const now = new Date().getTime();
+    const expiry = new Date(expiresAt).getTime();
+    const diff = Math.max(0, Math.floor((expiry - now) / 1000));
+    if (diff <= 0) return 'Expired';
+    const minutes = Math.floor(diff / 60);
+    const seconds = diff % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  };
+
   const stats = {
     total: orders.length,
+    locked: orders.filter(o => o.payment_status === 'locked').length,
+    paymentSubmitted: orders.filter(o => o.payment_status === 'payment_submitted').length,
     pending: orders.filter(o => o.payment_status === 'pending').length,
-    verified: orders.filter(o => o.payment_status === 'verified').length,
-    failed: orders.filter(o => o.payment_status === 'failed').length,
+    paid: orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'verified').length,
+    cancelled: orders.filter(o => o.payment_status === 'cancelled' || o.payment_status === 'failed').length,
     highestOrderNumber: orders.length > 0 ? Math.max(...orders.map(o => o.order_number || 0)) : 0,
   };
 
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
         <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 text-center">
           <p className="text-xl font-bold text-primary">#{stats.highestOrderNumber}</p>
           <p className="text-xs text-primary/80">Order #</p>
@@ -294,17 +327,21 @@ export const OrdersPanel = () => {
           <p className="text-xl font-bold">{stats.total}</p>
           <p className="text-xs text-muted-foreground">Total</p>
         </div>
-        <div className="p-3 bg-status-pending/5 rounded-lg border border-status-pending/20 text-center">
-          <p className="text-xl font-bold text-status-pending">{stats.pending}</p>
-          <p className="text-xs text-status-pending/80">Pending</p>
+        <div className="p-3 bg-blue-500/5 rounded-lg border border-blue-500/20 text-center">
+          <p className="text-xl font-bold text-blue-600">{stats.locked}</p>
+          <p className="text-xs text-blue-600/80">Reserved</p>
+        </div>
+        <div className="p-3 bg-amber-500/5 rounded-lg border border-amber-500/20 text-center">
+          <p className="text-xl font-bold text-amber-600">{stats.paymentSubmitted}</p>
+          <p className="text-xs text-amber-600/80">Pending Review</p>
         </div>
         <div className="p-3 bg-status-verified/5 rounded-lg border border-status-verified/20 text-center">
-          <p className="text-xl font-bold text-status-verified">{stats.verified}</p>
-          <p className="text-xs text-status-verified/80">Verified</p>
+          <p className="text-xl font-bold text-status-verified">{stats.paid}</p>
+          <p className="text-xs text-status-verified/80">Paid</p>
         </div>
         <div className="p-3 bg-status-failed/5 rounded-lg border border-status-failed/20 text-center">
-          <p className="text-xl font-bold text-status-failed">{stats.failed}</p>
-          <p className="text-xs text-status-failed/80">Failed</p>
+          <p className="text-xl font-bold text-status-failed">{stats.cancelled}</p>
+          <p className="text-xs text-status-failed/80">Cancelled</p>
         </div>
       </div>
 
@@ -321,14 +358,19 @@ export const OrdersPanel = () => {
           />
         </div>
         <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="verified">Verified</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="locked">Reserved</SelectItem>
+            <SelectItem value="payment_submitted">Pending Review</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
+            <SelectItem value="pending">Pending (Legacy)</SelectItem>
+            <SelectItem value="verified">Verified (Legacy)</SelectItem>
+            <SelectItem value="failed">Failed (Legacy)</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="icon" onClick={fetchOrders}>
@@ -378,7 +420,7 @@ export const OrdersPanel = () => {
               <div>
                 <label className="text-sm font-medium">With status</label>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {['verified', 'failed', 'pending'].map(status => (
+                  {['paid', 'verified', 'cancelled', 'failed', 'expired', 'pending'].map(status => (
                     <label key={status} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
@@ -449,8 +491,14 @@ export const OrdersPanel = () => {
                       <span className="font-mono text-sm font-semibold">{order.order_id}</span>
                       <Badge className={`${getStatusColor(order.payment_status)} border`}>
                         {getStatusIcon(order.payment_status)}
-                        <span className="ml-1 capitalize">{order.payment_status}</span>
+                        <span className="ml-1">{getStatusLabel(order.payment_status)}</span>
                       </Badge>
+                      {order.payment_status === 'locked' && order.reservation_expires_at && (
+                        <Badge variant="outline" className="bg-blue-500/5 text-blue-600 border-blue-500/20">
+                          <Timer className="w-3 h-3 mr-1" />
+                          {getTimeRemaining(order.reservation_expires_at)}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm">{order.customer_name}</p>
                     <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
@@ -555,7 +603,7 @@ export const OrdersPanel = () => {
                             href={order.payment_proof_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-sm underline"
+                            className="text-sm underline text-primary"
                           >
                             View screenshot
                           </a>
@@ -580,7 +628,28 @@ export const OrdersPanel = () => {
                     <span>₹{order.total.toLocaleString()}</span>
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions for payment_submitted orders */}
+                  {order.payment_status === 'payment_submitted' && (
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        onClick={() => updateOrderStatus(order.id, 'paid')}
+                        className="flex-1 bg-status-verified hover:bg-status-verified/90 text-status-verified-foreground"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Approve Payment
+                      </Button>
+                      <Button 
+                        onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Reject Payment
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Legacy actions for pending orders */}
                   {order.payment_status === 'pending' && (
                     <div className="flex gap-2 pt-2">
                       <Button 
@@ -598,6 +667,19 @@ export const OrdersPanel = () => {
                         <XCircle className="w-4 h-4 mr-1" />
                          Reject Order
                       </Button>
+                    </div>
+                  )}
+
+                  {/* Info for locked orders */}
+                  {order.payment_status === 'locked' && (
+                    <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Lock className="w-4 h-4" />
+                        <p className="text-sm font-medium">Order Reserved</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Customer is completing payment. Product is locked until timer expires or payment is submitted.
+                      </p>
                     </div>
                   )}
                 </div>

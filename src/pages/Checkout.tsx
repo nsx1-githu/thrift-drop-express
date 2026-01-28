@@ -1,16 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Copy, Check, QrCode, Loader2, Shield, Upload, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Copy, Check, QrCode, Loader2, Shield, Upload, AlertTriangle, Lock } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useCartAvailability } from '@/hooks/useCartAvailability';
+import { ReservationTimer } from '@/components/checkout/ReservationTimer';
+import { motion } from 'framer-motion';
 
 interface StoreSettings {
   store_name: string;
   upi_id: string;
   upi_qr_image: string;
+}
+
+interface ReservationState {
+  orderId: string;
+  expiresAt: string;
 }
 
 const Checkout = () => {
@@ -20,6 +27,11 @@ const Checkout = () => {
   
   // Monitor cart items for real-time availability
   useCartAvailability();
+  
+  // Step tracking: 'details' or 'payment'
+  const [step, setStep] = useState<'details' | 'payment'>('details');
+  const [reservation, setReservation] = useState<ReservationState | null>(null);
+  const [isReservationExpired, setIsReservationExpired] = useState(false);
   
   const [upiRefNumber, setUpiRefNumber] = useState('');
   const [paymentPayerName, setPaymentPayerName] = useState('');
@@ -80,10 +92,10 @@ const Checkout = () => {
   }, []);
 
   useEffect(() => {
-    if (items.length === 0) navigate('/cart');
-  }, [items.length, navigate]);
+    if (items.length === 0 && !reservation) navigate('/cart');
+  }, [items.length, navigate, reservation]);
 
-  if (items.length === 0) return null;
+  if (items.length === 0 && !reservation) return null;
 
   const copyUpiId = async () => {
     await navigator.clipboard.writeText(settings.upi_id);
@@ -92,7 +104,7 @@ const Checkout = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const validateForm = () => {
+  const validateDeliveryForm = () => {
     const newErrors: Record<string, string> = {};
     
     if (!formData.name.trim()) newErrors.name = 'Name is required';
@@ -113,6 +125,14 @@ const Checkout = () => {
     } else if (formData.area.trim().length < 5) {
       newErrors.area = 'Please enter a complete address';
     }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePaymentForm = () => {
+    const newErrors: Record<string, string> = {};
+    
     if (!upiRefNumber.trim()) {
       newErrors.upiRef = 'UPI reference number is required';
     } else if (upiRefNumber.trim().length < 8) {
@@ -141,8 +161,9 @@ const Checkout = () => {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) {
+  // Step 1: Reserve order and lock products
+  const handleReserveOrder = async () => {
+    if (!validateDeliveryForm()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -150,20 +171,6 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Convert payment proof to base64 for server-side upload
-      let paymentProofBase64 = '';
-      let paymentProofMime = '';
-      if (paymentProof) {
-        const arrayBuffer = await paymentProof.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        paymentProofBase64 = btoa(binary);
-        paymentProofMime = paymentProof.type;
-      }
-
       const orderItems = items.map(item => ({
         product_id: item.product.id,
         name: item.product.name,
@@ -181,62 +188,149 @@ const Checkout = () => {
         formData.pincode.trim(),
       ].filter(Boolean).join(', ');
 
-      const { data, error } = await supabase.functions.invoke('create-order', {
-        body: {
-          customer_name: formData.name.trim(),
-          customer_phone: formData.phone.trim(),
-          customer_address: fullAddress,
-          pincode: formData.pincode.trim(),
-          state: formData.state.trim(),
-          city: formData.city.trim(),
-          area: formData.area.trim(),
-          landmark: formData.landmark.trim() || null,
-          items: orderItems,
-          subtotal: total,
-          shipping: Math.round(shippingCost),
-          total: Math.round(finalTotal),
-          payment_method: 'UPI',
-          payment_reference: upiRefNumber.trim(),
-          payment_payer_name: paymentPayerName.trim(),
-          payment_proof_base64: paymentProofBase64,
-          payment_proof_mime: paymentProofMime,
-        },
+      // Get product IDs (filter to valid UUIDs)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const productIds = items
+        .map(item => item.product.id)
+        .filter(id => uuidRegex.test(id));
+
+      // Call the reservation RPC function
+      const { data, error } = await supabase.rpc('create_order_reservation', {
+        _customer_name: formData.name.trim(),
+        _customer_phone: formData.phone.trim(),
+        _customer_address: fullAddress,
+        _pincode: formData.pincode.trim(),
+        _state: formData.state.trim(),
+        _city: formData.city.trim(),
+        _area: formData.area.trim(),
+        _landmark: formData.landmark.trim() || '',
+        _items: orderItems,
+        _subtotal: total,
+        _shipping: Math.round(shippingCost),
+        _total: Math.round(finalTotal),
+        _payment_method: 'UPI',
+        _product_ids: productIds,
       });
+
       if (error) throw error;
 
-      const payloadError = (data as any)?.error as string | undefined;
-      const unavailableIds = (data as any)?.unavailable_product_ids as string[] | undefined;
+      const result = data?.[0];
       
-      // Handle sold-out items by removing them from cart
-      if (payloadError && unavailableIds && unavailableIds.length > 0) {
-        unavailableIds.forEach(id => removeItem(id));
-        toast.error(payloadError, {
-          duration: 5000,
-          icon: <AlertTriangle className="w-4 h-4" />,
-        });
-        setIsProcessing(false);
+      if (!result?.success) {
+        // Products unavailable
+        const unavailable = result?.unavailable_products as Array<{ id: string; name: string }> | null;
+        if (unavailable && unavailable.length > 0) {
+          unavailable.forEach(p => removeItem(p.id));
+          toast.error(`Some items are no longer available: ${unavailable.map(p => p.name).join(', ')}`, {
+            duration: 5000,
+            icon: <AlertTriangle className="w-4 h-4" />,
+          });
+        } else {
+          toast.error('Unable to reserve order. Please try again.');
+        }
         return;
       }
-      
-      if (payloadError) throw new Error(payloadError);
-      const orderId = (data as any)?.orderId as string | undefined;
-      if (!orderId) throw new Error('Missing orderId');
 
+      // Success! Store reservation and move to payment step
+      setReservation({
+        orderId: result.order_id,
+        expiresAt: result.expires_at,
+      });
+      setStep('payment');
+      toast.success('Order reserved! Complete payment within 10 minutes.');
+    } catch (error) {
+      console.error('Reservation error:', error);
+      const message =
+        (error as any)?.message ||
+        (error as any)?.error_description ||
+        'Failed to reserve order. Please try again.';
+      toast.error(message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Step 2: Submit payment details
+  const handleSubmitPayment = async () => {
+    if (!reservation) {
+      toast.error('No active reservation');
+      return;
+    }
+
+    if (!validatePaymentForm()) {
+      toast.error('Please fill in all payment details');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Convert payment proof to base64
+      let paymentProofBase64 = '';
+      if (paymentProof) {
+        const arrayBuffer = await paymentProof.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        paymentProofBase64 = btoa(binary);
+      }
+
+      // Upload payment proof to storage
+      const fileName = `payment-proofs/${reservation.orderId}-${Date.now()}.${paymentProof?.type.split('/')[1] || 'png'}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, paymentProof!, {
+          contentType: paymentProof?.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('Failed to upload payment screenshot');
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      const paymentProofUrl = urlData.publicUrl;
+
+      // Submit payment via RPC
+      const { data, error } = await supabase.rpc('submit_order_payment', {
+        _order_id: reservation.orderId,
+        _customer_phone: formData.phone.trim(),
+        _payment_reference: upiRefNumber.trim(),
+        _payment_payer_name: paymentPayerName.trim(),
+        _payment_proof_url: paymentProofUrl,
+      });
+
+      if (error) throw error;
+
+      const result = data?.[0];
+      
+      if (!result?.success) {
+        throw new Error(result?.error_message || 'Failed to submit payment');
+      }
+
+      // Success!
       addNotification({
-        title: 'Order Placed Successfully!',
-        message: `Your order ${orderId} has been placed. Payment verification is pending.`,
+        title: 'Payment Submitted!',
+        message: `Your order ${reservation.orderId} is being verified. You'll be notified once confirmed.`,
         type: 'order',
-        orderId,
+        orderId: reservation.orderId,
       });
 
       upsertCustomerOrder({
-        orderId,
+        orderId: reservation.orderId,
         phone: formData.phone.trim(),
         status: 'pending',
       });
 
       sessionStorage.setItem('lastOrder', JSON.stringify({
-        orderId,
+        orderId: reservation.orderId,
         items,
         total: finalTotal,
         customerName: formData.name,
@@ -246,15 +340,30 @@ const Checkout = () => {
       clearCart();
       navigate('/order-confirmation');
     } catch (error) {
-      console.error('Order error:', error);
+      console.error('Payment submission error:', error);
       const message =
         (error as any)?.message ||
         (error as any)?.error_description ||
-        'Failed to place order. Please try again.';
+        'Failed to submit payment. Please try again.';
       toast.error(message);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleReservationExpire = () => {
+    setIsReservationExpired(true);
+    toast.error('Reservation expired. Please place the order again.');
+  };
+
+  const handleStartOver = () => {
+    setReservation(null);
+    setStep('details');
+    setIsReservationExpired(false);
+    setUpiRefNumber('');
+    setPaymentPayerName('');
+    setPaymentProof(null);
+    setErrors({});
   };
 
   const upiPaymentLink = `upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.store_name)}&am=${finalTotal}&cu=INR`;
@@ -272,6 +381,11 @@ const Checkout = () => {
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-widest">Secure</p>
             <h1 className="font-semibold">Checkout</h1>
+          </div>
+          {/* Step indicator */}
+          <div className="ml-auto flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${step === 'details' ? 'bg-primary' : 'bg-muted'}`} />
+            <div className={`w-2 h-2 rounded-full ${step === 'payment' ? 'bg-primary' : 'bg-muted'}`} />
           </div>
         </div>
       </div>
@@ -300,221 +414,267 @@ const Checkout = () => {
           </div>
         </section>
 
-        {/* Delivery Details */}
-        <section>
-          <p className="section-title mb-3">Delivery Details</p>
-          <div className="space-y-4">
-            <div>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Full Name"
-                className={`input-field ${errors.name ? 'border-destructive focus:border-destructive' : ''}`}
-              />
-              {errors.name && <p className="text-xs text-destructive mt-2">{errors.name}</p>}
-            </div>
-            
-            <div>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="Phone Number (10 digits)"
-                maxLength={10}
-                className={`input-field ${errors.phone ? 'border-destructive focus:border-destructive' : ''}`}
-              />
-              {errors.phone && <p className="text-xs text-destructive mt-2">{errors.phone}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+        {/* Step 1: Delivery Details */}
+        {step === 'details' && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <p className="section-title mb-3">Delivery Details</p>
+            <div className="space-y-4">
               <div>
                 <input
                   type="text"
-                  name="pincode"
-                  value={formData.pincode}
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
-                  placeholder="Pincode"
-                  maxLength={6}
-                  className={`input-field ${errors.pincode ? 'border-destructive focus:border-destructive' : ''}`}
+                  placeholder="Full Name"
+                  className={`input-field ${errors.name ? 'border-destructive focus:border-destructive' : ''}`}
                 />
-                {errors.pincode && <p className="text-xs text-destructive mt-2">{errors.pincode}</p>}
+                {errors.name && <p className="text-xs text-destructive mt-2">{errors.name}</p>}
               </div>
+              
               <div>
                 <input
-                  type="text"
-                  name="state"
-                  value={formData.state}
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
                   onChange={handleChange}
-                  placeholder="State"
-                  className={`input-field ${errors.state ? 'border-destructive focus:border-destructive' : ''}`}
+                  placeholder="Phone Number (10 digits)"
+                  maxLength={10}
+                  className={`input-field ${errors.phone ? 'border-destructive focus:border-destructive' : ''}`}
                 />
-                {errors.state && <p className="text-xs text-destructive mt-2">{errors.state}</p>}
+                {errors.phone && <p className="text-xs text-destructive mt-2">{errors.phone}</p>}
               </div>
-            </div>
 
-            <div>
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                placeholder="City"
-                className={`input-field ${errors.city ? 'border-destructive focus:border-destructive' : ''}`}
-              />
-              {errors.city && <p className="text-xs text-destructive mt-2">{errors.city}</p>}
-            </div>
-            
-            <div>
-              <textarea
-                name="area"
-                value={formData.area}
-                onChange={handleChange}
-                placeholder="Area / Locality / House No. / Street"
-                rows={2}
-                className={`input-field resize-none ${errors.area ? 'border-destructive focus:border-destructive' : ''}`}
-              />
-              {errors.area && <p className="text-xs text-destructive mt-2">{errors.area}</p>}
-            </div>
-
-            <div>
-              <input
-                type="text"
-                name="landmark"
-                value={formData.landmark}
-                onChange={handleChange}
-                placeholder="Landmark (optional)"
-                className="input-field"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* UPI Payment Section */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <QrCode className="w-4 h-4 text-primary" />
-            <p className="section-title">Pay via UPI</p>
-          </div>
-          
-          <div className="section-floating p-5 space-y-5">
-            {/* Amount Display */}
-            <div className="text-center py-4 border-b border-border">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Amount to Pay</p>
-              <p className="price-tag-lg"><span className="font-bold text-2xl">₹</span>{finalTotal.toLocaleString()}</p>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2">
-              {/* QR Code */}
-              <div className="flex justify-center">
-                {isLoadingSettings ? (
-                  <div className="w-48 h-48 flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <img
-                    src={qrCodeUrl}
-                    alt="UPI QR Code"
-                    className="w-48 h-48 rounded-2xl bg-white p-3 object-contain"
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <input
+                    type="text"
+                    name="pincode"
+                    value={formData.pincode}
+                    onChange={handleChange}
+                    placeholder="Pincode"
+                    maxLength={6}
+                    className={`input-field ${errors.pincode ? 'border-destructive focus:border-destructive' : ''}`}
                   />
-                )}
-              </div>
-
-              {/* UPI Details */}
-              <div className="space-y-4">
-                <div className="p-4 bg-muted/30 rounded-xl">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">UPI Name</p>
-                  <p className="font-medium">{settings.store_name}</p>
+                  {errors.pincode && <p className="text-xs text-destructive mt-2">{errors.pincode}</p>}
                 </div>
-
-                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">UPI ID</p>
-                    <p className="font-mono text-sm">{settings.upi_id}</p>
-                  </div>
-                  <button
-                    onClick={copyUpiId}
-                    className="p-3 rounded-xl bg-card hover:bg-muted transition-colors"
-                  >
-                    {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-                  </button>
+                <div>
+                  <input
+                    type="text"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    placeholder="State"
+                    className={`input-field ${errors.state ? 'border-destructive focus:border-destructive' : ''}`}
+                  />
+                  {errors.state && <p className="text-xs text-destructive mt-2">{errors.state}</p>}
                 </div>
               </div>
-            </div>
 
-            {/* Instructions */}
-            <div className="text-sm text-muted-foreground space-y-1.5 p-4 bg-muted/20 rounded-xl">
-              <p>1. Scan the QR code or copy UPI ID</p>
-              <p>2. Pay ₹{finalTotal.toLocaleString()} using any UPI app</p>
-              <p>3. Enter the transaction reference number below</p>
+              <div>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  placeholder="City"
+                  className={`input-field ${errors.city ? 'border-destructive focus:border-destructive' : ''}`}
+                />
+                {errors.city && <p className="text-xs text-destructive mt-2">{errors.city}</p>}
+              </div>
+              
+              <div>
+                <textarea
+                  name="area"
+                  value={formData.area}
+                  onChange={handleChange}
+                  placeholder="Area / Locality / House No. / Street"
+                  rows={2}
+                  className={`input-field resize-none ${errors.area ? 'border-destructive focus:border-destructive' : ''}`}
+                />
+                {errors.area && <p className="text-xs text-destructive mt-2">{errors.area}</p>}
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  name="landmark"
+                  value={formData.landmark}
+                  onChange={handleChange}
+                  placeholder="Landmark (optional)"
+                  className="input-field"
+                />
+              </div>
             </div>
 
             {/* No Refund Policy */}
-            <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/20">
+            <div className="mt-6 p-4 bg-destructive/10 rounded-xl border border-destructive/20">
               <p className="text-sm font-semibold text-destructive">⚠️ No Refund Policy</p>
               <p className="text-xs text-muted-foreground mt-1">
                 All sales are final. Please review your order carefully before completing payment.
               </p>
             </div>
+          </motion.section>
+        )}
 
-            {/* Transaction Reference */}
-            <div>
-              <input
-                type="text"
-                value={upiRefNumber}
-                onChange={(e) => {
-                  setUpiRefNumber(e.target.value);
-                  if (errors.upiRef) setErrors(prev => ({ ...prev, upiRef: '' }));
-                }}
-                placeholder="UPI Transaction Reference Number"
-                className={`input-field ${errors.upiRef ? 'border-destructive focus:border-destructive' : ''}`}
-              />
-              {errors.upiRef && <p className="text-xs text-destructive mt-2">{errors.upiRef}</p>}
-              <p className="text-xs text-muted-foreground mt-2">Find this in your UPI app's transaction history</p>
+        {/* Step 2: Payment Section (only shown after reservation) */}
+        {step === 'payment' && reservation && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {/* Reservation Timer */}
+            <ReservationTimer 
+              expiresAt={reservation.expiresAt} 
+              onExpire={handleReservationExpire}
+            />
+
+            {/* Order ID Display */}
+            <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Lock className="w-4 h-4 text-primary" />
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">Your Order ID</p>
+              </div>
+              <p className="font-mono text-xl font-bold text-primary">{reservation.orderId}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                📝 Please mention this Order ID in the payment note if possible.
+              </p>
             </div>
 
-            {/* Payer Name */}
-            <div>
-              <input
-                type="text"
-                value={paymentPayerName}
-                onChange={(e) => {
-                  setPaymentPayerName(e.target.value);
-                  if (errors.payerName) setErrors(prev => ({ ...prev, payerName: '' }));
-                }}
-                placeholder="Payer Name (as shown in UPI app)"
-                className={`input-field ${errors.payerName ? 'border-destructive focus:border-destructive' : ''}`}
-              />
-              {errors.payerName && <p className="text-xs text-destructive mt-2">{errors.payerName}</p>}
-            </div>
+            {/* UPI Payment Section - only if not expired */}
+            {!isReservationExpired && (
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <QrCode className="w-4 h-4 text-primary" />
+                  <p className="section-title">Pay via UPI</p>
+                </div>
+                
+                <div className="section-floating p-5 space-y-5">
+                  {/* Amount Display */}
+                  <div className="text-center py-4 border-b border-border">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Amount to Pay</p>
+                    <p className="price-tag-lg"><span className="font-bold text-2xl">₹</span>{finalTotal.toLocaleString()}</p>
+                  </div>
 
-            {/* Payment Screenshot */}
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Payment Screenshot</p>
-              <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                errors.paymentProof ? 'border-destructive' : 'border-border hover:border-primary/30 hover:bg-primary/5'
-              }`}>
-                <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                <span className="text-sm text-muted-foreground">
-                  {paymentProof ? paymentProof.name : 'Tap to upload screenshot'}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setPaymentProof(f);
-                    if (errors.paymentProof) setErrors(prev => ({ ...prev, paymentProof: '' }));
-                  }}
-                  className="hidden"
-                />
-              </label>
-              {errors.paymentProof && <p className="text-xs text-destructive mt-2">{errors.paymentProof}</p>}
-            </div>
-          </div>
-        </section>
+                  <div className="grid gap-5 md:grid-cols-2">
+                    {/* QR Code */}
+                    <div className="flex justify-center">
+                      {isLoadingSettings ? (
+                        <div className="w-48 h-48 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : (
+                        <img
+                          src={qrCodeUrl}
+                          alt="UPI QR Code"
+                          className="w-48 h-48 rounded-2xl bg-white p-3 object-contain"
+                        />
+                      )}
+                    </div>
+
+                    {/* UPI Details */}
+                    <div className="space-y-4">
+                      <div className="p-4 bg-muted/30 rounded-xl">
+                        <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">UPI Name</p>
+                        <p className="font-medium">{settings.store_name}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">UPI ID</p>
+                          <p className="font-mono text-sm">{settings.upi_id}</p>
+                        </div>
+                        <button
+                          onClick={copyUpiId}
+                          className="p-3 rounded-xl bg-card hover:bg-muted transition-colors"
+                        >
+                          {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Instructions */}
+                  <div className="text-sm text-muted-foreground space-y-1.5 p-4 bg-muted/20 rounded-xl">
+                    <p>1. Scan the QR code or copy UPI ID</p>
+                    <p>2. Pay ₹{finalTotal.toLocaleString()} using any UPI app</p>
+                    <p>3. Enter the transaction reference number below</p>
+                  </div>
+
+                  {/* Transaction Reference */}
+                  <div>
+                    <input
+                      type="text"
+                      value={upiRefNumber}
+                      onChange={(e) => {
+                        setUpiRefNumber(e.target.value);
+                        if (errors.upiRef) setErrors(prev => ({ ...prev, upiRef: '' }));
+                      }}
+                      placeholder="UPI Transaction Reference Number"
+                      className={`input-field ${errors.upiRef ? 'border-destructive focus:border-destructive' : ''}`}
+                    />
+                    {errors.upiRef && <p className="text-xs text-destructive mt-2">{errors.upiRef}</p>}
+                    <p className="text-xs text-muted-foreground mt-2">Find this in your UPI app's transaction history</p>
+                  </div>
+
+                  {/* Payer Name */}
+                  <div>
+                    <input
+                      type="text"
+                      value={paymentPayerName}
+                      onChange={(e) => {
+                        setPaymentPayerName(e.target.value);
+                        if (errors.payerName) setErrors(prev => ({ ...prev, payerName: '' }));
+                      }}
+                      placeholder="Payer Name (as shown in UPI app)"
+                      className={`input-field ${errors.payerName ? 'border-destructive focus:border-destructive' : ''}`}
+                    />
+                    {errors.payerName && <p className="text-xs text-destructive mt-2">{errors.payerName}</p>}
+                  </div>
+
+                  {/* Payment Screenshot */}
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Payment Screenshot</p>
+                    <label className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      errors.paymentProof ? 'border-destructive' : 'border-border hover:border-primary/30 hover:bg-primary/5'
+                    }`}>
+                      <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">
+                        {paymentProof ? paymentProof.name : 'Tap to upload screenshot'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] ?? null;
+                          setPaymentProof(f);
+                          if (errors.paymentProof) setErrors(prev => ({ ...prev, paymentProof: '' }));
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    {errors.paymentProof && <p className="text-xs text-destructive mt-2">{errors.paymentProof}</p>}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Expired state - show start over button */}
+            {isReservationExpired && (
+              <div className="text-center py-8">
+                <button
+                  onClick={handleStartOver}
+                  className="btn-secondary"
+                >
+                  Start Over
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Trust Badge */}
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -525,20 +685,40 @@ const Checkout = () => {
 
       {/* Fixed Bottom CTA */}
       <div className="fixed bottom-20 md:bottom-0 left-0 right-0 p-5 bg-background/80 backdrop-blur-xl border-t border-border/50">
-        <button 
-          onClick={handleSubmit}
-          disabled={isProcessing}
-          className="w-full btn-primary flex items-center justify-center gap-3"
-        >
-          {isProcessing ? (
-            <>
-              <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-              Placing Order...
-            </>
-          ) : (
-            'Confirm Order'
-          )}
-        </button>
+        {step === 'details' ? (
+          <button 
+            onClick={handleReserveOrder}
+            disabled={isProcessing}
+            className="w-full btn-primary flex items-center justify-center gap-3"
+          >
+            {isProcessing ? (
+              <>
+                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                Reserving Order...
+              </>
+            ) : (
+              <>
+                <Lock className="w-5 h-5" />
+                Reserve Order & Proceed to Payment
+              </>
+            )}
+          </button>
+        ) : reservation && !isReservationExpired ? (
+          <button 
+            onClick={handleSubmitPayment}
+            disabled={isProcessing}
+            className="w-full btn-primary flex items-center justify-center gap-3"
+          >
+            {isProcessing ? (
+              <>
+                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                Submitting Payment...
+              </>
+            ) : (
+              'Submit Payment Details'
+            )}
+          </button>
+        ) : null}
       </div>
     </div>
   );

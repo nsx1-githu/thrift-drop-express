@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ShoppingBag, Check, Shield, Truck, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingBag, Check, Shield, Truck, AlertTriangle, Clock } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { PageTransition, MotionButton } from '@/components/ui/motion';
 import { useProductAvailability } from '@/hooks/useProductAvailability';
+import { useProductLock } from '@/hooks/useProductLock';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,9 @@ const ProductDetail = () => {
 
   const { data: products = [], isLoading } = useStorefrontProducts();
   const product = products.find(p => p.id === id);
+
+  // Real-time lock status check
+  const { isLocked } = useProductLock(product?.id);
 
   if (isLoading) {
     return (
@@ -45,6 +49,7 @@ const ProductDetail = () => {
   // Real-time availability check
   const { isAvailable } = useProductAvailability(product.id);
   const isSoldOut = product.soldOut || isAvailable === false;
+  const isTemporarilyReserved = isLocked && !isSoldOut;
   
   const isInCart = items.some(item => item.product.id === product.id);
   const discount = product.originalPrice 
@@ -55,6 +60,12 @@ const ProductDetail = () => {
     if (isSoldOut) {
       toast.error('This item was just sold!', {
         icon: <AlertTriangle className="w-4 h-4" />,
+      });
+      return;
+    }
+    if (isTemporarilyReserved) {
+      toast.error('This item is temporarily reserved. Please check back later.', {
+        icon: <Clock className="w-4 h-4" />,
       });
       return;
     }
@@ -95,9 +106,30 @@ const ProductDetail = () => {
           />
         </AnimatePresence>
         
+        {/* Sold Out Overlay */}
         {isSoldOut && (
           <div className="sold-out-overlay">
             <span className="sold-out-text text-base">Sold Out</span>
+          </div>
+        )}
+
+        {/* Temporarily Reserved Overlay */}
+        {isTemporarilyReserved && !isSoldOut && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+            <motion.div 
+              className="text-center p-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <Clock className="w-12 h-12 mx-auto mb-3 text-primary" />
+              <p className="text-lg font-semibold">Temporarily Reserved</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                This item is being held for another customer.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Please check back later.
+              </p>
+            </motion.div>
           </div>
         )}
 
@@ -153,7 +185,7 @@ const ProductDetail = () => {
 
         {/* Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
-          {!isSoldOut && discount > 0 && (
+          {!isSoldOut && !isTemporarilyReserved && discount > 0 && (
             <motion.span 
               className="px-4 py-1.5 text-sm font-semibold bg-accent text-accent-foreground rounded-full"
               initial={{ opacity: 0, x: 20 }}
@@ -301,17 +333,24 @@ const ProductDetail = () => {
       >
         <MotionButton 
           onClick={handleAddToCart}
-          disabled={isSoldOut}
+          disabled={isSoldOut || isTemporarilyReserved}
           className={`w-full flex items-center justify-center gap-3 py-4 rounded-full font-semibold text-base transition-colors ${
             isSoldOut 
               ? 'bg-muted text-muted-foreground cursor-not-allowed'
-              : isInCart
-                ? 'bg-success text-success-foreground'
-                : 'btn-primary'
+              : isTemporarilyReserved
+                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                : isInCart
+                  ? 'bg-success text-success-foreground'
+                  : 'btn-primary'
           }`}
         >
           {isSoldOut ? (
             'Sold Out'
+          ) : isTemporarilyReserved ? (
+            <>
+              <Clock className="w-5 h-5" />
+              Temporarily Reserved
+            </>
           ) : isInCart ? (
             <>
               <Check className="w-5 h-5" />
