@@ -5,6 +5,7 @@ import { ArrowRight, Leaf, Sparkles, Heart, Recycle, Eye } from 'lucide-react';
 import { HighlightsCarousel } from '@/components/HighlightsCarousel';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { OwnerSection } from '@/components/OwnerSection';
 import { Category } from '@/types/product';
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { useSiteContent } from "@/hooks/useSiteContent";
@@ -126,6 +127,9 @@ const Home = () => {
           </div>
         </motion.div>
       </section>
+
+      {/* Owner Section */}
+      <OwnerSection />
 
       {/* Highlights Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-10 sm:py-12 border-t border-border">
