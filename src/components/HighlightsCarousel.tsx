@@ -82,7 +82,7 @@ export const HighlightsCarousel = ({ products, isLoading }: HighlightsCarouselPr
                   <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="w-4 h-4 text-primary" />
                     <span className="text-xs uppercase tracking-[0.2em] text-primary font-medium">
-                      Highlight
+                      Latest Drop
                     </span>
                   </div>
                   

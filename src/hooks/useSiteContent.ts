@@ -16,7 +16,7 @@ const DEFAULTS: Record<string, string> = {
   content_benefit_3_desc: 'Premium brands at a fraction of retail',
   content_benefit_4_title: 'Circular',
   content_benefit_4_desc: 'Extend the lifecycle of quality garments',
-  content_highlights_title: 'Highlights',
+  content_highlights_title: 'Latest Drops',
   content_category_title: 'Shop by Category',
   content_products_title: 'All Products',
   content_products_empty: 'No products found',
