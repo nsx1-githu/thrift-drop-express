@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Loader2, Save, RefreshCw, FileText, Type } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2, Save, RefreshCw, FileText, Upload, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ const CONTENT_SCHEMA = {
     fields: [
       { key: 'content_owner_name', label: 'Owner Name', placeholder: 'The Owner', type: 'text' },
       { key: 'content_owner_bio', label: 'Owner Bio (2-3 lines)', placeholder: 'Passionate about sustainable fashion...', type: 'textarea' },
-      { key: 'content_owner_image', label: 'Owner Image URL', placeholder: 'https://...', type: 'text' },
+      { key: 'content_owner_image', label: 'Owner Photo', placeholder: 'Upload photo', type: 'image' },
     ],
   },
   homepage: {
@@ -87,6 +87,57 @@ export const ContentManagementPanel = () => {
   const [originalContent, setOriginalContent] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const handleImageUpload = async (key: string, file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(key);
+    try {
+      // Generate unique filename
+      const ext = file.name.split('.').pop() || 'jpg';
+      const filename = `owner/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+
+      // Upload to storage
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(filename, file, { upsert: true });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filename);
+
+      // Update content with the URL
+      const imageUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      handleChange(key, imageUrl);
+      toast.success('Image uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setUploadingImage(null);
+    }
+  };
+
+  const handleRemoveImage = (key: string) => {
+    handleChange(key, '');
+  };
 
   const fetchContent = async () => {
     setIsLoading(true);
@@ -205,7 +256,60 @@ export const ContentManagementPanel = () => {
                   <Label htmlFor={field.key} className="text-sm font-medium mb-1 block">
                     {field.label}
                   </Label>
-                  {field.type === 'textarea' ? (
+                  {field.type === 'image' ? (
+                    <div className="space-y-2">
+                      {/* Hidden file input */}
+                      <input
+                        ref={(el) => { fileInputRefs.current[field.key] = el; }}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(field.key, file);
+                        }}
+                      />
+                      
+                      {/* Current image preview or upload button */}
+                      {content[field.key] ? (
+                        <div className="relative inline-block">
+                          <img 
+                            src={content[field.key]} 
+                            alt="Owner" 
+                            className="w-32 h-32 object-cover rounded-lg border border-border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(field.key)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : null}
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadingImage === field.key}
+                        onClick={() => fileInputRefs.current[field.key]?.click()}
+                        className="w-full"
+                      >
+                        {uploadingImage === field.key ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            {content[field.key] ? 'Change Photo' : 'Upload Photo'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : field.type === 'textarea' ? (
                     <textarea
                       id={field.key}
                       value={content[field.key] || ''}
