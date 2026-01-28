@@ -49,7 +49,7 @@ export const BottomNav = () => {
 
   return (
     <motion.nav 
-      className="fixed bottom-4 left-4 right-4 z-50 md:hidden"
+      className="fixed bottom-2 left-3 right-3 z-50 md:hidden"
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
