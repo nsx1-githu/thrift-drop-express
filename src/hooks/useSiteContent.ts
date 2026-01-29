@@ -35,6 +35,21 @@ const DEFAULTS: Record<string, string> = {
   content_sold_out_label: 'Sold Out',
   content_featured_label: 'Featured',
   content_add_to_cart_button: 'Add to Cart',
+  // About Us Section
+  content_about_title: 'About Us',
+  content_about_story_title: 'Our Story',
+  content_about_story: 'Born from a love for sustainable fashion and unique style, we started this journey to give pre-loved pieces a second chance at life.',
+  content_about_origin_title: 'Where We Started',
+  content_about_origin: 'Founded in 2024, our store originated from a small collection of curated vintage finds that quickly grew into a passion project.',
+  content_about_mission_title: 'Our Mission',
+  content_about_mission: 'To make sustainable fashion accessible, affordable, and stylish for everyone while reducing the environmental impact of fast fashion.',
+  // Contact Us Section
+  content_contact_title: 'Contact Us',
+  content_contact_description: 'Have questions or want to connect? We would love to hear from you!',
+  content_contact_address_title: 'Visit Us',
+  content_contact_address: 'Your City, Your State, India',
+  content_contact_hours_title: 'Hours',
+  content_contact_hours: 'Mon - Sat: 10AM - 8PM',
 };
 
 export function useSiteContent() {

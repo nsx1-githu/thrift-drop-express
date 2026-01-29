@@ -71,6 +71,31 @@ const CONTENT_SCHEMA = {
       { key: 'content_footer_copyright', label: 'Copyright Text', placeholder: '© 2024 All rights reserved.', type: 'text' },
     ],
   },
+  about: {
+    label: 'About Us Section',
+    icon: '📖',
+    fields: [
+      { key: 'content_about_title', label: 'Section Title', placeholder: 'About Us', type: 'text' },
+      { key: 'content_about_story_title', label: 'Story Heading', placeholder: 'Our Story', type: 'text' },
+      { key: 'content_about_story', label: 'Our Story', placeholder: 'Born from a love for sustainable fashion...', type: 'textarea' },
+      { key: 'content_about_origin_title', label: 'Origin Heading', placeholder: 'Where We Started', type: 'text' },
+      { key: 'content_about_origin', label: 'Origin Details', placeholder: 'Founded in 2024, our store originated...', type: 'textarea' },
+      { key: 'content_about_mission_title', label: 'Mission Heading', placeholder: 'Our Mission', type: 'text' },
+      { key: 'content_about_mission', label: 'Mission Statement', placeholder: 'To make sustainable fashion accessible...', type: 'textarea' },
+    ],
+  },
+  contact: {
+    label: 'Contact Us Section',
+    icon: '📞',
+    fields: [
+      { key: 'content_contact_title', label: 'Section Title', placeholder: 'Contact Us', type: 'text' },
+      { key: 'content_contact_description', label: 'Contact Description', placeholder: 'Have questions or want to connect?', type: 'textarea' },
+      { key: 'content_contact_address_title', label: 'Address Heading', placeholder: 'Visit Us', type: 'text' },
+      { key: 'content_contact_address', label: 'Address', placeholder: 'Your City, Your State, India', type: 'text' },
+      { key: 'content_contact_hours_title', label: 'Hours Heading', placeholder: 'Hours', type: 'text' },
+      { key: 'content_contact_hours', label: 'Business Hours', placeholder: 'Mon - Sat: 10AM - 8PM', type: 'text' },
+    ],
+  },
   misc: {
     label: 'Miscellaneous',
     icon: '⚙️',
