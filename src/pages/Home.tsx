@@ -1,22 +1,20 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Leaf, Sparkles, Heart, Recycle, Eye, User, MapPin, Clock, Mail, Instagram } from 'lucide-react';
+import { ArrowRight, Leaf, Sparkles, Heart, Recycle, Eye, User, BookOpen, Phone } from 'lucide-react';
 import { HighlightsCarousel } from '@/components/HighlightsCarousel';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Category } from '@/types/product';
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { useSiteContent } from "@/hooks/useSiteContent";
-import { useStoreSettings } from "@/hooks/useStoreSettings";
-import { PageTransition, StaggerWrapper, StaggerItem, MotionButton } from '@/components/ui/motion';
+import { PageTransition, StaggerWrapper, StaggerItem, MotionButton, MotionCard } from '@/components/ui/motion';
 
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
 
   const { data: products = [], isLoading } = useStorefrontProducts();
   const { getContent } = useSiteContent();
-  const { settings } = useStoreSettings();
 
   // Get featured products for highlights, fallback to latest drops if none featured
   const featuredProducts = products.filter(p => p.isFeatured && !p.soldOut);
@@ -253,164 +251,49 @@ const Home = () => {
         )}
       </section>
 
-      {/* About Us & Contact Us Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-t border-border bg-muted/30">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-10 md:gap-16">
-            {/* About Us */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <h2 className="text-2xl sm:text-3xl font-serif font-normal mb-6 text-foreground">
-                {getContent('content_about_title')}
-              </h2>
-              
-              <div className="space-y-6">
-                {/* Our Story */}
-                <div>
-                  <h3 className="text-sm font-medium uppercase tracking-wider text-primary mb-2">
-                    {getContent('content_about_story_title')}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {getContent('content_about_story')}
-                  </p>
-                </div>
-                
-                {/* Origin */}
-                <div>
-                  <h3 className="text-sm font-medium uppercase tracking-wider text-primary mb-2">
-                    {getContent('content_about_origin_title')}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {getContent('content_about_origin')}
-                  </p>
-                </div>
-                
-                {/* Mission */}
-                <div>
-                  <h3 className="text-sm font-medium uppercase tracking-wider text-primary mb-2">
-                    {getContent('content_about_mission_title')}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {getContent('content_about_mission')}
-                  </p>
-                </div>
-
-                {/* Owner Info */}
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center gap-3">
-                    {ownerImage ? (
-                      <img 
-                        src={ownerImage} 
-                        alt={ownerName} 
-                        className="w-12 h-12 rounded-full object-cover border border-border"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="w-6 h-6 text-primary" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{ownerName}</p>
-                      <p className="text-xs text-muted-foreground">Founder</p>
-                    </div>
+      {/* About & Contact Links Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 border-t border-border">
+        <div className="max-w-3xl mx-auto">
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+            {/* About Us Card */}
+            <Link to="/about">
+              <MotionCard className="group relative overflow-hidden bg-card border border-border rounded-xl p-6 sm:p-8 h-full hover:border-primary/50 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-5 h-5 text-primary" />
                   </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Contact Us */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <h2 className="text-2xl sm:text-3xl font-serif font-normal mb-6 text-foreground">
-                {getContent('content_contact_title')}
-              </h2>
-              
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                {getContent('content_contact_description')}
-              </p>
-              
-              <div className="space-y-5">
-                {/* Address */}
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-medium uppercase tracking-wider text-foreground mb-1">
-                      {getContent('content_contact_address_title')}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {getContent('content_contact_address')}
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-serif font-normal mb-2 text-foreground group-hover:text-primary transition-colors">
+                      {getContent('content_about_title')}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                      Learn our story, mission, and the passion behind every curated piece.
                     </p>
                   </div>
                 </div>
-                
-                {/* Hours */}
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 text-primary" />
+                <ArrowRight className="absolute bottom-6 right-6 w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </MotionCard>
+            </Link>
+
+            {/* Contact Us Card */}
+            <Link to="/contact">
+              <MotionCard className="group relative overflow-hidden bg-card border border-border rounded-xl p-6 sm:p-8 h-full hover:border-primary/50 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-5 h-5 text-primary" />
                   </div>
-                  <div>
-                    <h4 className="text-xs font-medium uppercase tracking-wider text-foreground mb-1">
-                      {getContent('content_contact_hours_title')}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {getContent('content_contact_hours')}
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-serif font-normal mb-2 text-foreground group-hover:text-primary transition-colors">
+                      {getContent('content_contact_title')}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                      Get in touch with us for questions, collaborations, or just to say hello.
                     </p>
                   </div>
                 </div>
-                
-                {/* Email */}
-                {settings.contact_email && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-foreground mb-1">
-                        Email
-                      </h4>
-                      <a 
-                        href={`mailto:${settings.contact_email}`}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {settings.contact_email}
-                      </a>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Instagram */}
-                {settings.instagram_id && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Instagram className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-foreground mb-1">
-                        Instagram
-                      </h4>
-                      <a 
-                        href={`https://instagram.com/${settings.instagram_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        @{settings.instagram_id}
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+                <ArrowRight className="absolute bottom-6 right-6 w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </MotionCard>
+            </Link>
           </div>
         </div>
       </section>
