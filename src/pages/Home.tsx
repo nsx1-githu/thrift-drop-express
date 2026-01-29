@@ -57,145 +57,128 @@ const Home = () => {
 
   return (
     <PageTransition className="min-h-screen pb-8">
-      {/* Owner Hero Section - Full Screen */}
-      <section className="relative w-full h-[100svh] flex items-end justify-center overflow-hidden">
-        {/* Full Screen Background Image */}
-        {ownerImage ? (
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${ownerImage})` }}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-accent/20 to-muted">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <User className="w-32 h-32 sm:w-48 sm:h-48 text-foreground/10" strokeWidth={0.5} />
-            </div>
+      {/* Owner Hero Section with Thrifting Content */}
+      <section className="relative w-full min-h-[100svh] overflow-hidden">
+        <div className="flex flex-col lg:flex-row min-h-[100svh]">
+          {/* Left Side - Owner Image */}
+          <div className="relative w-full lg:w-1/2 h-[60svh] lg:h-[100svh]">
+            {ownerImage ? (
+              <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                style={{ backgroundImage: `url(${ownerImage})` }}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-accent/20 to-muted">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <User className="w-32 h-32 sm:w-48 sm:h-48 text-foreground/10" strokeWidth={0.5} />
+                </div>
+              </div>
+            )}
+            
+            {/* Gradient Overlay for mobile */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-background" />
+            
+            {/* Owner Name & Bio - Mobile Only */}
+            <motion.div 
+              className="absolute bottom-6 left-0 right-0 text-center px-4 lg:hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-3xl sm:text-4xl font-serif font-normal mb-2 text-foreground">
+                {ownerName}
+              </h1>
+              <p className="text-sm text-foreground/80 leading-relaxed max-w-sm mx-auto">
+                {ownerBio}
+              </p>
+            </motion.div>
           </div>
-        )}
-        
-        {/* Gradient Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        
-        {/* Content at Bottom */}
-        <motion.div 
-          className="relative z-10 text-center px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 md:pb-20 max-w-3xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Owner Name */}
-          <motion.h1 
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-normal mb-3 sm:mb-4 text-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            {ownerName}
-          </motion.h1>
-          
-          {/* Owner Bio */}
-          <motion.p 
-            className="text-sm sm:text-base md:text-lg text-foreground/80 leading-relaxed max-w-lg mx-auto"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.4 }}
-          >
-            {ownerBio}
-          </motion.p>
-        </motion.div>
-        
-        {/* Scroll Indicator */}
-        <motion.div 
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, y: [0, 8, 0] }}
-          transition={{ 
-            opacity: { delay: 1, duration: 0.5 },
-            y: { delay: 1, duration: 1.5, repeat: Infinity, ease: "easeInOut" }
-          }}
-        >
-          <div className="w-6 h-10 rounded-full border-2 border-foreground/30 flex items-start justify-center p-2">
-            <div className="w-1.5 h-2.5 rounded-full bg-foreground/50" />
-          </div>
-        </motion.div>
-      </section>
 
-      {/* Hero Section - About Thrifting */}
-      <section className="relative px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12 sm:pb-16 md:pt-20 md:pb-24">
-        <div className="max-w-2xl mx-auto text-center">
-          <motion.p 
-            className="text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.2em] text-muted-foreground mb-4 sm:mb-6"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            {getContent('content_hero_subtitle')}
-          </motion.p>
-          <motion.h1 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal mb-6 sm:mb-8 leading-tight text-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            {getContent('content_hero_title')}
-          </motion.h1>
-          <motion.p 
-            className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 sm:mb-10 leading-relaxed max-w-xl mx-auto px-2"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
-            {getContent('content_hero_description')}
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <Link to="/products">
-              <MotionButton className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-none border border-primary">
-                {getContent('content_hero_button')}
-                <ArrowRight className="w-4 h-4" />
-              </MotionButton>
-            </Link>
-          </motion.div>
+          {/* Right Side - Thrifting Content */}
+          <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-8 lg:px-12 xl:px-16 py-10 lg:py-0 bg-background">
+            {/* Owner Name & Bio - Desktop Only */}
+            <motion.div 
+              className="hidden lg:block mb-10"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-4xl xl:text-5xl font-serif font-normal mb-3 text-foreground">
+                {ownerName}
+              </h1>
+              <p className="text-sm xl:text-base text-foreground/70 leading-relaxed max-w-md">
+                {ownerBio}
+              </p>
+            </motion.div>
+
+            {/* Thrifting Section */}
+            <motion.div
+              className="mb-8 lg:mb-10"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2 lg:mb-3">
+                {getContent('content_hero_subtitle')}
+              </p>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-normal mb-3 lg:mb-4 leading-tight text-foreground">
+                {getContent('content_hero_title')}
+              </h2>
+              <p className="text-xs sm:text-sm lg:text-base text-muted-foreground leading-relaxed max-w-md">
+                {getContent('content_hero_description')}
+              </p>
+            </motion.div>
+
+            {/* Why Thrift Benefits */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+            >
+              <h3 className="text-sm sm:text-base lg:text-lg font-medium mb-4 lg:mb-5 text-foreground">
+                {getContent('content_why_thrift_title')}
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
+                {benefits.map((item, index) => (
+                  <motion.div 
+                    key={item.title}
+                    className="flex items-start gap-2 sm:gap-3"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + index * 0.08 }}
+                  >
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-primary/10">
+                      <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" strokeWidth={1.5} />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-[10px] sm:text-xs font-medium uppercase tracking-wide text-foreground">{item.title}</h4>
+                      <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-snug">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Shop Now Button */}
+            <motion.div
+              className="mt-6 lg:mt-8"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+            >
+              <Link to="/products">
+                <MotionButton className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors rounded-none border border-primary">
+                  {getContent('content_hero_button')}
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </MotionButton>
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Why Thrift Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-10 sm:py-12 md:py-16 border-t border-border">
-        <motion.div
-          className="max-w-4xl mx-auto"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="text-xl sm:text-2xl md:text-3xl text-center mb-8 sm:mb-12 text-foreground">
-            {getContent('content_why_thrift_title')}
-          </h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-            {benefits.map((item, index) => (
-              <motion.div 
-                key={item.title}
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
-                  <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" strokeWidth={1.5} />
-                </div>
-                <h3 className="text-xs sm:text-sm font-medium uppercase tracking-wider mb-1 sm:mb-2 text-foreground">{item.title}</h3>
-                <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Highlights Section */}
+      {/* Latest Drops Section - Now right after owner */}
       <section className="px-4 sm:px-6 lg:px-8 py-10 sm:py-12 border-t border-border">
         <motion.div 
           className="flex items-end justify-between mb-6 sm:mb-8"
