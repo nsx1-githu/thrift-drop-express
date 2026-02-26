@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
 import { Product } from '@/types/product';
@@ -44,7 +45,7 @@ const glowVariants: Variants = {
   }
 };
 
-export const ProductCard = ({ product }: ProductCardProps) => {
+export const ProductCard = forwardRef<HTMLDivElement, ProductCardProps>(({ product }, ref) => {
   // Real-time availability check
   const { isAvailable } = useProductAvailability(product.id);
   
@@ -156,4 +157,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       </motion.div>
     </Link>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
