@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Home, Grid, Package, Download, ShoppingBag } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
@@ -30,7 +31,7 @@ const badgeVariants: Variants = {
   }
 };
 
-export const BottomNav = () => {
+export const BottomNav = forwardRef<HTMLElement>((_, ref) => {
   const location = useLocation();
   const itemCount = useCartStore((state) => state.getItemCount());
   const canInstall = usePwaInstallAvailable();
@@ -48,7 +49,8 @@ export const BottomNav = () => {
   ];
 
   return (
-    <motion.nav 
+    <motion.nav
+      ref={ref}
       className="sticky top-16 sm:top-20 z-30 md:hidden bg-background/95 backdrop-blur-xl border-b border-border/50"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -130,4 +132,6 @@ export const BottomNav = () => {
       </div>
     </motion.nav>
   );
-};
+});
+
+BottomNav.displayName = 'BottomNav';
