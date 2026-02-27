@@ -14,7 +14,7 @@ export interface Notification {
 export interface CustomerOrderWatch {
   orderId: string;
   phone: string;
-  lastStatus: 'pending' | 'verified' | 'failed' | null;
+  lastStatus: string | null;
   lastCheckedAt: string | null;
 }
 
@@ -22,8 +22,8 @@ interface NotificationStore {
   notifications: Notification[];
   customerOrders: CustomerOrderWatch[];
   addNotification: (notification: Omit<Notification, 'id' | 'read' | 'createdAt'>) => void;
-  upsertCustomerOrder: (order: { orderId: string; phone: string; status?: CustomerOrderWatch['lastStatus'] }) => void;
-  setCustomerOrderStatus: (orderId: string, status: CustomerOrderWatch['lastStatus']) => void;
+  upsertCustomerOrder: (order: { orderId: string; phone: string; status?: string | null }) => void;
+  setCustomerOrderStatus: (orderId: string, status: string | null) => void;
   markCustomerOrderChecked: (orderId: string) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
