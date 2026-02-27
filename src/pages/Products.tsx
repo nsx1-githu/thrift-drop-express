@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { ProductCard } from '@/components/ProductCard';
@@ -9,6 +10,7 @@ import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { PageTransition, StaggerWrapper, StaggerItem, MotionButton } from '@/components/ui/motion';
 
 const Products = () => {
+  const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [selectedSizes, setSelectedSizes] = useState<Size[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<Condition[]>([]);
@@ -16,6 +18,16 @@ const Products = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: products = [], isLoading } = useStorefrontProducts();
+
+  // Sync category from URL query params (e.g. /products?category=jackets)
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat) {
+      setSelectedCategory(cat as Category);
+    } else {
+      setSelectedCategory('all');
+    }
+  }, [searchParams]);
 
   const sizes = Constants.public.Enums.product_size as unknown as Size[];
   const conditions = Constants.public.Enums.product_condition as unknown as Condition[];
@@ -55,6 +67,10 @@ const Products = () => {
     selectedConditions.length +
     (priceRange[0] > 0 || priceRange[1] < 10000 ? 1 : 0);
 
+  const categoryTitle = selectedCategory === 'all' 
+    ? 'All Products' 
+    : selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1);
+
   return (
     <PageTransition className="min-h-screen pb-28 md:pb-8">
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl mx-auto">
@@ -66,7 +82,7 @@ const Products = () => {
         >
           <div>
             <p className="section-title mb-1 sm:mb-2">Collection</p>
-            <h1 className="heading-md">All Products</h1>
+            <h1 className="heading-md">{categoryTitle}</h1>
           </div>
           <MotionButton 
             onClick={() => setShowFilters(!showFilters)}
