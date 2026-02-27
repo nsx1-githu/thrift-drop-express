@@ -289,6 +289,8 @@ export type Database = {
       track_order: {
         Args: { _customer_phone: string; _order_id: string }
         Returns: {
+          awb_number: string
+          courier_name: string
           created_at: string
           customer_address: string
           customer_name: string
@@ -299,8 +301,10 @@ export type Database = {
           payment_method: string
           payment_status: Database["public"]["Enums"]["payment_status"]
           shipping: number
+          shipping_status: string
           subtotal: number
           total: number
+          tracking_url: string
         }[]
       }
     }
